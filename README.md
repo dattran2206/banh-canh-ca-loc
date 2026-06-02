@@ -6,10 +6,10 @@ Dự án POS (Point of Sale) chuyên nghiệp, đồng bộ thời gian thực (
 
 ## 🏗️ Kiến Trúc Hệ Thống
 
-Hệ thống được xây dựng trên mô hình Client-Server hiện đại, loại bỏ hoàn toàn việc lưu trữ tạm bợ ở trình duyệt (LocalStorage) sang cơ sở dữ liệu quan hệ bảo mật:
+Hệ thống được xây dựng trên mô hình Client-Server hiện đại, áp dụng **Clean Architecture** kết hợp với **DDD (Domain-Driven Design)** và **CQRS (MediatR)** ở phía backend để đảm bảo mã nguồn dễ bảo trì và kiểm thử:
 
 *   **Frontend**: React (Vite) + Tailwind CSS + Lucide Icons + Recharts (Biểu đồ).
-*   **Backend**: ASP.NET Core Web API (.NET 9.0) + Entity Framework Core.
+*   **Backend (Clean Architecture)**: ASP.NET Core Web API (.NET 9.0) + Entity Framework Core.
 *   **Cơ sở dữ liệu**: Microsoft SQL Server (16 bảng quan hệ tối ưu hóa hiệu năng).
 *   **Realtime Communication**: ASP.NET Core SignalR (WebSocket).
 *   **Xác thực bảo mật**: JWT Bearer Tokens & mã hóa mật khẩu một chiều BCrypt trên server.
@@ -24,21 +24,33 @@ Hệ thống được xây dựng trên mô hình Client-Server hiện đại, l
 2.  **Order & POS Bán Hàng**:
     *   Thiết kế giao diện thích ứng tốt trên cả máy tính bảng và di động (Mobile Responsive).
     *   Nhân viên dễ dàng chọn bàn, lên đơn món ăn kèm ghi chú, thêm món mới vào hóa đơn hiện có.
-3.  **Điều Phối Bếp Realtime (Kitchen Page)**:
+3.  **Đổi món & Hủy đơn hàng nâng cao (Khách Hàng Là Thượng Đế)**:
+    *   Cho phép hủy đơn hàng và thay đổi giỏ hàng đã gọi.
+    *   Không hoàn trả nguyên vật liệu thô khi hủy đơn hàng đã chế biến xong (`ready`) để phản ánh đúng thực tế hao hụt nguyên liệu thô đã qua chế biến; không ảnh hưởng các đơn chưa chế biến.
+    *   Nếu đơn hàng đã chế biến xong (`ready`) nhưng khách vẫn muốn đổi món, hệ thống hiển thị pop-up cảnh báo ngắn gọn qua `ConfirmDialog` hệ thống. Nếu đồng ý, backend sẽ **chỉ trừ thêm nguyên vật liệu cho những món tăng thêm hoặc thêm mới**. Món giảm đi/bị xóa sẽ không hoàn kho (tính vào hao hụt).
+    *   Trạng thái đơn hàng cập nhật được đồng bộ thời gian thực qua SignalR trên các màn hình.
+4.  **Điều Phối Bếp Realtime (Kitchen Page)**:
     *   Màn hình bếp tự động nhận đơn hàng ngay khi bồi bàn xác nhận (không cần tải lại trang).
     *   Cập nhật trạng thái chế biến (`Chờ chế biến` -> `Đang chế biến` -> `Sẵn sàng`).
-4.  **Tự Động Khấu Trừ Kho Nguyên Liệu**:
+5.  **Tối ưu hóa giao diện Bếp (KDS) & Chế độ dịu mắt (Eye-care)**:
+    *   **Chế Độ Dịu Mắt (Cozy Eye-Care Mode)**: Khi bật, giao diện bếp chuyển sang tông màu trầm ấm dịu nhẹ (`bg-[#0d0c0b] text-zinc-300`), giảm độ tương phản chói của văn bản.
+    *   **Bộ Lọc Giảm Chói Độ Sáng (In-App Dimmer)**: Tích hợp thanh trượt giảm độ sáng trực tiếp ngay trên trang giúp nhân viên bếp dim màn hình độc lập với cài đặt phần cứng.
+    *   **Thay Đổi Kích Thước Chữ (Font Size Adjuster)**: 3 mức kích thước chữ nhanh (Vừa, Lớn, To) giúp đọc chính xác từ khoảng cách xa (2-3 mét).
+    *   **Âm Thanh Báo Đơn Mới (Audio Chime)**: Tự động phát tiếng chuông chime 2 âm điệu bằng **Web Audio API** khi có order mới đổ xuống bếp.
+6.  **Tự Động Khấu Trừ Kho Nguyên Liệu**:
     *   Tự động tính toán và khấu trừ nguyên liệu trong kho thực tế khi món ăn chuyển sang trạng thái `Sẵn sàng` (dựa trên công thức định lượng định sẵn của món đó).
     *   Tự động bắn thông báo lỗi (Toast) nếu nguyên liệu chạm ngưỡng cảnh báo tồn kho thấp.
-5.  **Quản Lý Kho (Inventory)**:
+7.  **Quản Lý Kho (Inventory)**:
     *   Ghi nhận nhật ký nhập kho thực phẩm, tạo phiếu hủy nguyên liệu hỏng/hết hạn.
     *   Cung cấp chức năng kiểm kê điều chỉnh chênh lệch kho lý thuyết và thực tế.
-6.  **Báo Cáo & Phân Tích (Dashboard & Reports)**:
+8.  **Báo Cáo & Phân Tích (Dashboard & Reports)**:
     *   Thống kê KPIs quan trọng (Doanh thu ngày, Hóa đơn phát sinh, Tồn kho thấp).
     *   Biểu đồ doanh thu trực quan 7 ngày qua, so sánh hiệu suất doanh thu theo tuần, tháng.
-7.  **Quản lý Ca Làm Việc (Shifts)**:
+9.  **Quản lý Ca Làm Việc (Shifts)**:
     *   Nhân viên bắt buộc mở ca trước khi bán hàng.
     *   Khi kết thúc ca, hệ thống tự động tính toán tổng số tiền thực tế thu về và số hóa đơn đã thanh toán.
+10. **Hộp thoại Confirm và Toast chuyên nghiệp**:
+    *   Toàn bộ các thông báo hành động quan trọng được chuyển sang sử dụng `ConfirmDialog` và `Toast` tùy chỉnh đẹp mắt, loại bỏ hoàn toàn các hộp thoại mặc định của trình duyệt/Windows.
 
 ---
 
@@ -51,7 +63,7 @@ banh-canh-ca-loc/
 │   ├── src/
 │   │   ├── api/                      # Client Axios cấu hình JWT (apiClient.js)
 │   │   ├── components/               # Components dùng chung (Layout, TableForm, các UI Dialog...)
-│   │   │   └── ui/                   # Các UI atomic components (button, dialog, input, label...)
+│   │   │   └── ui/                   # Các UI atomic components (confirm, button, dialog, input, label...)
 │   │   ├── hooks/                    # Custom React hooks (use-toast...)
 │   │   ├── lib/                      # Thư viện dùng chung (DataContext, appAuth, storage...)
 │   │   ├── pages/                    # Các trang nghiệp vụ (Dashboard, Kitchen, Orders, Menu, Inventory...)
@@ -61,17 +73,16 @@ banh-canh-ca-loc/
 │   ├── package.json                  # Cấu hình dự án và dependencies
 │   ├── tailwind.config.js            # Cấu hình Tailwind CSS
 │   └── vite.config.js                # Cấu hình Vite bundler
-├── backend/                          # Backend ASP.NET Core Web API (Server POS)
-│   ├── BanhCanhCaLoc.Api/
-│   │   ├── Controllers/              # Các REST API Controllers (Auth, Orders, Menu, Tables, Inventory...)
-│   │   ├── Data/                     # DbContext (EF Core) và DbInitializer (Gieo dữ liệu)
-│   │   ├── Hubs/                     # SignalR Hubs (OrderHub)
-│   │   ├── Migrations/               # Thư mục chứa EF Core Migrations
-│   │   ├── Models/                   # 16 lớp đối tượng cơ sở dữ liệu (User, Table, MenuItem...)
-│   │   ├── Services/                 # Các Services nghiệp vụ (TokenService...)
-│   │   ├── Properties/               # launchSettings.json (Cấu hình chạy server)
-│   │   ├── appsettings.json          # Cấu hình Connection String & JWT Secrets
-│   │   └── Program.cs                # Khởi tạo và thiết lập Middleware Pipeline của Server
+├── backend/                          # Backend ASP.NET Core Web API (Clean Architecture)
+│   ├── src/
+│   │   ├── BanhCanhCaLoc.Domain/     # Core Business Models, Entities, Interfaces
+│   │   ├── BanhCanhCaLoc.Application/# Application Core, CQRS (MediatR), Validators, Commands/Queries
+│   │   ├── BanhCanhCaLoc.Infrastructure/# Persistence, AppDbContext, Repositories, SignalR Hubs
+│   │   └── BanhCanhCaLoc.Api/        # Controllers, Middlewares, API Endpoints, Program.cs
+│   ├── tests/
+│   │   ├── BanhCanhCaLoc.ArchTests/  # Architecture tests
+│   │   ├── BanhCanhCaLoc.UnitTests/  # Unit tests for Business Logic
+│   │   └── BanhCanhCaLoc.IntegrationTests/ # Integration tests for DB/EF Core
 │   └── BanhCanhCaLoc.sln             # Solution của dự án .NET
 └── database/                         # Thư mục quản lý sao lưu/khôi phục CSDL
     ├── backups/                      # Chứa các file sao lưu .bak
@@ -92,7 +103,7 @@ banh-canh-ca-loc/
 ---
 
 ### Bước 1: Cấu hình Cơ sở dữ liệu SQL Server
-Mở file cấu hình tại [appsettings.json](file:///c:/dattt/LEARN/banh-canh-ca-loc/backend/BanhCanhCaLoc.Api/appsettings.json) và điều chỉnh chuỗi kết nối phù hợp với máy của bạn:
+Mở file cấu hình tại [appsettings.json](file:///d:/WORK_SPACE/CodingProject/banh-canh-ca-loc/backend/src/BanhCanhCaLoc.Api/appsettings.json) và điều chỉnh chuỗi kết nối phù hợp với máy của bạn:
 
 ```json
 "ConnectionStrings": {
@@ -103,9 +114,9 @@ Mở file cấu hình tại [appsettings.json](file:///c:/dattt/LEARN/banh-canh-
 ---
 
 ### Bước 2: Khởi chạy Backend Web API
-1.  Di chuyển vào thư mục backend:
+1.  Di chuyển vào thư mục backend API:
     ```bash
-    cd backend/BanhCanhCaLoc.Api
+    cd backend/src/BanhCanhCaLoc.Api
     ```
 2.  Chạy Migration để tạo cấu trúc cơ sở dữ liệu trên SQL Server (nếu chạy lần đầu):
     ```bash
@@ -140,11 +151,11 @@ Mở file cấu hình tại [appsettings.json](file:///c:/dattt/LEARN/banh-canh-
 
 ## 💾 Sao Lưu & Khôi Phục Cơ Sở Dữ Liệu (Backup & Restore)
 
-Hệ thống cung cấp sẵn các công cụ tự động hóa quá trình sao lưu và khôi phục CSDL trong thư mục [database/](file:///c:/dattt/LEARN/banh-canh-ca-loc/database/):
+Hệ thống cung cấp sẵn các công cụ tự động hóa quá trình sao lưu và khôi phục CSDL trong thư mục [database/](file:///d:/WORK_SPACE/CodingProject/banh-canh-ca-loc/database/):
 
 *   **Sao lưu (Backup)**: Chạy script `./database/backup.ps1` để tự động tạo file `.bak` lưu trữ tại `database/backups/`.
 *   **Khôi phục (Restore)**: Chạy script `./database/restore.ps1 -BackupFile "database/backups/file_name.bak"` để khôi phục trạng thái dữ liệu.
-*   *Để biết chi tiết cách thực hiện bằng câu lệnh hoặc qua giao diện SSMS, vui lòng tham khảo [Tài liệu hướng dẫn Backup & Restore](file:///c:/dattt/LEARN/banh-canh-ca-loc/database/README.md).*
+*   *Để biết chi tiết cách thực hiện bằng câu lệnh hoặc qua giao diện SSMS, vui lòng tham khảo [Tài liệu hướng dẫn Backup & Restore](file:///d:/WORK_SPACE/CodingProject/banh-canh-ca-loc/database/README.md).*
 
 ---
 

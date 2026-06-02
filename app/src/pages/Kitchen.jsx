@@ -10,7 +10,7 @@ import { useToast } from '@/components/ui/use-toast';
 // Web Audio API Synthesizer for premium doorbell chime
 const playNotificationSound = () => {
     try {
-        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const ctx = new (window.AudioContext || window['webkitAudioContext'])();
         if (ctx.state === 'suspended') {
             ctx.resume();
         }
