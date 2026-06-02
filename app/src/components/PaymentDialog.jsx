@@ -1,7 +1,6 @@
 import React, { useState, useMemo, useRef } from 'react';
 import { useAppAuth } from '@/lib/appAuth';
-import { getList, setList, addToList, generateId, get, KEYS } from '@/lib/storage';
-import { doLogActivity } from '@/lib/appAuth';
+import { useData } from '@/lib/DataContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -9,35 +8,23 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Printer } from 'lucide-react';
 
 export default function PaymentDialog({ orderId, table, onClose, onPaid }) {
-    const { currentUser, currentShift } = useAppAuth();
+    const { currentUser } = useAppAuth();
+    const { orders, shopInfo, createPayment } = useData();
     const [discountType, setDiscountType] = useState('%');
     const [discountValue, setDiscountValue] = useState(0);
     const printRef = useRef(null);
 
-    const { order, items, shopInfo } = useMemo(() => {
-        const orders = getList(KEYS.ORDERS);
-        const orderItems = getList(KEYS.ORDER_ITEMS);
-        const menuItems = getList(KEYS.MENU_ITEMS);
-        const shopInfo = get(KEYS.SHOP_INFO) || { name: 'Quán Bánh Canh Cá Lóc' };
-
+    const { order, items } = useMemo(() => {
         const order = orders.find(o => o.id === orderId);
-        const items = orderItems
-            .filter(i => i.orderId === orderId)
-            .map(i => ({ ...i, menuItem: menuItems.find(m => m.id === i.menuItemId) }));
-
-        return { order, items, shopInfo };
-    }, [orderId]);
+        const items = order?.items || [];
+        return { order, items };
+    }, [orders, orderId]);
 
     const subtotal = items.reduce((s, i) => s + (i.menuItem?.price || 0) * i.quantity, 0);
     const discountAmount = discountType === '%'
         ? Math.round(subtotal * (discountValue || 0) / 100)
         : Math.round(discountValue || 0);
     const totalAmount = Math.max(0, subtotal - discountAmount);
-
-    const shifts = getList(KEYS.SHIFTS);
-    const shift = shifts.find(s => s.id === order?.shiftId);
-    const users = getList(KEYS.USERS);
-    const waiter = users.find(u => u.id === order?.waiterId);
 
     const handlePrint = () => {
         const printContent = printRef.current?.innerHTML;
@@ -60,33 +47,19 @@ export default function PaymentDialog({ orderId, table, onClose, onPaid }) {
         win.print();
     };
 
-    const handlePayment = () => {
-        const payment = {
-            id: generateId(),
-            orderId,
-            cashierId: currentUser?.id,
-            subtotal,
-            discountType,
-            discountValue: discountValue || 0,
-            discountAmount,
-            totalAmount,
-            paidAt: new Date().toISOString(),
-        };
-        addToList(KEYS.PAYMENTS, payment);
-
-        const orders = getList(KEYS.ORDERS);
-        const idx = orders.findIndex(o => o.id === orderId);
-        if (idx !== -1) {
-            orders[idx] = { ...orders[idx], status: 'paid' };
-            setList(KEYS.ORDERS, orders);
+    const handlePayment = async () => {
+        try {
+            await createPayment({
+                orderId,
+                totalAmount,
+                paymentMethod: 'Tiền mặt'
+            });
+            handlePrint();
+            onPaid();
+        } catch (err) {
+            console.error("Payment failed", err);
         }
-
-        doLogActivity(currentUser?.id, 'payment', `Thanh toán order ${order?.orderNumber} bàn ${table?.number}, ${totalAmount.toLocaleString('vi-VN')}đ`);
-        handlePrint();
-        onPaid();
     };
-
-    // Auto-deduct inventory when order goes to ready is handled in KitchenPage
 
     return (
         <Dialog open={true} onOpenChange={onClose}>
@@ -107,8 +80,7 @@ export default function PaymentDialog({ orderId, table, onClose, onPaid }) {
                     <hr className="border-dashed my-2" />
                     <p>Bàn: {table?.number} | Order: {order?.orderNumber}</p>
                     <p>Ngày: {new Date().toLocaleString('vi-VN')}</p>
-                    {shift && <p>Ca: {new Date(shift.startTime).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}</p>}
-                    {waiter && <p>Bồi bàn: {waiter.fullName}</p>}
+                    {currentUser && <p>Thu ngân: {currentUser.fullName}</p>}
                     <hr className="border-dashed my-2" />
                     <table className="w-full text-xs">
                         <tbody>
@@ -160,7 +132,7 @@ export default function PaymentDialog({ orderId, table, onClose, onPaid }) {
                                 onChange={e => setDiscountValue(Number(e.target.value))}
                                 className="flex-1 border-amber-200 h-9"
                                 placeholder="0"
-                            />
+                             />
                         </div>
                     </div>
 

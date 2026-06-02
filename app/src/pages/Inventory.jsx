@@ -1,7 +1,6 @@
-import React, { useState, useMemo } from 'react';
-import { getList, setList, addToList, generateId, KEYS } from '@/lib/storage';
+import React, { useState, useEffect } from 'react';
+import { useData } from '@/lib/DataContext';
 import { useAppAuth } from '@/lib/appAuth';
-import { doLogActivity } from '@/lib/appAuth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -11,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Plus, AlertTriangle, Pencil, Trash2, PackagePlus, XCircle, ClipboardList } from 'lucide-react';
 import { format } from 'date-fns';
 import { useToast } from '@/components/ui/use-toast';
+import apiClient from '@/api/apiClient';
 import { 
     AlertDialog, 
     AlertDialogContent, 
@@ -24,6 +24,7 @@ import {
 
 export default function Inventory() {
     const { currentUser } = useAppAuth();
+    const { ingredients, deleteIngredient } = useData();
     const { toast } = useToast();
     const [refresh, setRefresh] = useState(0);
     const [showAddIng, setShowAddIng] = useState(false);
@@ -33,24 +34,45 @@ export default function Inventory() {
     const [showStockTake, setShowStockTake] = useState(false);
     const [deleteConfirmIng, setDeleteConfirmIng] = useState(null);
 
-    const { ingredients, stockEntries, wasteRecords } = useMemo(() => ({
-        ingredients: getList(KEYS.INGREDIENTS),
-        stockEntries: getList(KEYS.STOCK_ENTRIES).slice(-20).reverse(),
-        wasteRecords: getList(KEYS.WASTE_RECORDS).slice(-20).reverse(),
-    }), [refresh]);
+    const [stockEntries, setStockEntries] = useState([]);
+    const [wasteRecords, setWasteRecords] = useState([]);
+    const [loadingEntries, setLoadingEntries] = useState(false);
+    const [loadingWaste, setLoadingWaste] = useState(false);
 
-    const users = getList(KEYS.USERS);
+    const fetchHistory = async () => {
+        setLoadingEntries(true);
+        setLoadingWaste(true);
+        try {
+            const [entriesRes, wasteRes] = await Promise.all([
+                apiClient.get('/inventory/stock-entries'),
+                apiClient.get('/inventory/waste-records')
+            ]);
+            setStockEntries(entriesRes.data.slice(0, 20));
+            setWasteRecords(wasteRes.data.slice(0, 20));
+        } catch (err) {
+            console.error("Error loading inventory logs", err);
+        } finally {
+            setLoadingEntries(false);
+            setLoadingWaste(false);
+        }
+    };
 
-    const confirmDeleteIng = () => {
+    useEffect(() => {
+        fetchHistory();
+    }, [refresh]);
+
+    const confirmDeleteIng = async () => {
         if (!deleteConfirmIng) return;
-        const list = getList(KEYS.INGREDIENTS).filter(i => i.id !== deleteConfirmIng);
-        setList(KEYS.INGREDIENTS, list);
-        setDeleteConfirmIng(null);
-        setRefresh(r => r + 1);
-        toast({
-            title: "Xóa nguyên liệu thành công",
-            description: "Nguyên liệu đã được gỡ bỏ khỏi kho.",
-        });
+        try {
+            await deleteIngredient(deleteConfirmIng);
+            setDeleteConfirmIng(null);
+            toast({
+                title: "Xóa nguyên liệu thành công",
+                description: "Nguyên liệu đã được gỡ bỏ khỏi kho.",
+            });
+        } catch (err) {
+            console.error("Delete ingredient failed", err);
+        }
     };
 
     return (
@@ -119,21 +141,26 @@ export default function Inventory() {
 
                 <TabsContent value="in" className="mt-4">
                     <div className="space-y-2">
-                        {stockEntries.length === 0 && <p className="text-amber-600 text-center py-8">Chưa có lịch sử nhập kho</p>}
-                        {stockEntries.map(entry => {
-                            const ing = ingredients.find(i => i.id === entry.ingredientId);
-                            const user = users.find(u => u.id === entry.createdBy);
-                            return (
-                                <div key={entry.id} className="border border-amber-100 rounded-xl px-4 py-3 bg-white flex items-center justify-between">
-                                    <div>
-                                        <p className="font-medium text-amber-900">{ing?.name}</p>
-                                        <p className="text-xs text-gray-500">{entry.note || '—'} · {user?.fullName}</p>
-                                        <p className="text-xs text-gray-400">{format(new Date(entry.createdAt), 'dd/MM/yyyy HH:mm')}</p>
-                                    </div>
-                                    <Badge className="bg-green-100 text-green-700 text-sm">+{entry.quantity} {ing?.unit}</Badge>
-                                </div>
-                            );
-                        })}
+                        {loadingEntries ? (
+                            <p className="text-amber-600 text-center py-8">Đang tải...</p>
+                        ) : (
+                            <>
+                                {stockEntries.length === 0 && <p className="text-amber-600 text-center py-8">Chưa có lịch sử nhập kho</p>}
+                                {stockEntries.map(entry => {
+                                    const ing = ingredients.find(i => i.id === entry.ingredientId);
+                                    return (
+                                        <div key={entry.id} className="border border-amber-100 rounded-xl px-4 py-3 bg-white flex items-center justify-between">
+                                            <div>
+                                                <p className="font-medium text-amber-900">{ing?.name || 'Nguyên liệu'}</p>
+                                                <p className="text-xs text-gray-500">{entry.note || '—'}</p>
+                                                <p className="text-xs text-gray-400">{format(new Date(entry.createdAt), 'dd/MM/yyyy HH:mm')}</p>
+                                            </div>
+                                            <Badge className="bg-green-100 text-green-700 text-sm">+{entry.quantity} {ing?.unit}</Badge>
+                                        </div>
+                                    );
+                                })}
+                            </>
+                        )}
                     </div>
                 </TabsContent>
 
@@ -145,21 +172,26 @@ export default function Inventory() {
                         </Button>
                     </div>
                     <div className="space-y-2">
-                        {wasteRecords.length === 0 && <p className="text-amber-600 text-center py-8">Chưa có phiếu hủy nào</p>}
-                        {wasteRecords.map(rec => {
-                            const ing = ingredients.find(i => i.id === rec.ingredientId);
-                            const user = users.find(u => u.id === rec.createdBy);
-                            return (
-                                <div key={rec.id} className="border border-red-100 rounded-xl px-4 py-3 bg-white flex items-center justify-between">
-                                    <div>
-                                        <p className="font-medium text-red-800">{ing?.name}</p>
-                                        <p className="text-xs text-gray-500">Lý do: {rec.reason} · {user?.fullName}</p>
-                                        <p className="text-xs text-gray-400">{format(new Date(rec.createdAt), 'dd/MM/yyyy HH:mm')}</p>
-                                    </div>
-                                    <Badge className="bg-red-100 text-red-700 text-sm">-{rec.quantity} {ing?.unit}</Badge>
-                                </div>
-                            );
-                        })}
+                        {loadingWaste ? (
+                            <p className="text-amber-600 text-center py-8">Đang tải...</p>
+                        ) : (
+                            <>
+                                {wasteRecords.length === 0 && <p className="text-amber-600 text-center py-8">Chưa có phiếu hủy nào</p>}
+                                {wasteRecords.map(rec => {
+                                    const ing = ingredients.find(i => i.id === rec.ingredientId);
+                                    return (
+                                        <div key={rec.id} className="border border-red-100 rounded-xl px-4 py-3 bg-white flex items-center justify-between">
+                                            <div>
+                                                <p className="font-medium text-red-800">{ing?.name || 'Nguyên liệu'}</p>
+                                                <p className="text-xs text-gray-500">Lý do: {rec.reason}</p>
+                                                <p className="text-xs text-gray-400">{format(new Date(rec.createdAt), 'dd/MM/yyyy HH:mm')}</p>
+                                            </div>
+                                            <Badge className="bg-red-100 text-red-700 text-sm">-{rec.quantity} {ing?.unit}</Badge>
+                                        </div>
+                                    );
+                                })}
+                            </>
+                        )}
                     </div>
                 </TabsContent>
             </Tabs>
@@ -223,17 +255,26 @@ export default function Inventory() {
 }
 
 function IngredientForm({ ing, onClose, onSaved }) {
+    const { addIngredient, updateIngredient } = useData();
     const [form, setForm] = useState({ name: ing?.name || '', unit: ing?.unit || 'kg', currentStock: ing?.currentStock || '', minThreshold: ing?.minThreshold || '' });
-    const handleSave = () => {
+    const handleSave = async () => {
         if (!form.name) return;
-        if (ing) {
-            const list = getList(KEYS.INGREDIENTS);
-            const idx = list.findIndex(i => i.id === ing.id);
-            if (idx !== -1) { list[idx] = { ...list[idx], ...form, currentStock: parseFloat(form.currentStock), minThreshold: parseFloat(form.minThreshold) }; setList(KEYS.INGREDIENTS, list); }
-        } else {
-            addToList(KEYS.INGREDIENTS, { id: generateId(), ...form, currentStock: parseFloat(form.currentStock) || 0, minThreshold: parseFloat(form.minThreshold) || 0 });
+        try {
+            const payload = {
+                name: form.name,
+                unit: form.unit,
+                currentStock: parseFloat(form.currentStock) || 0,
+                minThreshold: parseFloat(form.minThreshold) || 0
+            };
+            if (ing) {
+                await updateIngredient(ing.id, { ...ing, ...payload });
+            } else {
+                await addIngredient(payload);
+            }
+            onSaved();
+        } catch (err) {
+            console.error("Error saving ingredient", err);
         }
-        onSaved();
     };
     return (
         <Dialog open={true} onOpenChange={onClose}>
@@ -242,7 +283,7 @@ function IngredientForm({ ing, onClose, onSaved }) {
                 <div className="space-y-3">
                     <div><Label className="text-amber-800">Tên *</Label><Input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} className="border-amber-200 mt-1" /></div>
                     <div><Label className="text-amber-800">Đơn vị</Label><Input value={form.unit} onChange={e => setForm(f => ({ ...f, unit: e.target.value }))} className="border-amber-200 mt-1" placeholder="kg, lít, cái..." /></div>
-                    <div><Label className="text-amber-800">Tồn kho hiện tại</Label><Input type="number" value={form.currentStock} onChange={e => setForm(f => ({ ...f, currentStock: e.target.value }))} className="border-amber-200 mt-1" /></div>
+                    <div><Label className="text-amber-800">Tồn kho hiện tại</Label><Input type="number" value={form.currentStock} onChange={e => setForm(f => ({ ...f, currentStock: e.target.value }))} className="border-amber-200 mt-1" disabled={!!ing} /></div>
                     <div><Label className="text-amber-800">Ngưỡng tối thiểu</Label><Input type="number" value={form.minThreshold} onChange={e => setForm(f => ({ ...f, minThreshold: e.target.value }))} className="border-amber-200 mt-1" /></div>
                     <Button onClick={handleSave} className="w-full bg-amber-500 hover:bg-amber-600 text-white rounded-xl">Lưu</Button>
                 </div>
@@ -252,18 +293,22 @@ function IngredientForm({ ing, onClose, onSaved }) {
 }
 
 function StockInForm({ ing, onClose, onSaved }) {
-    const { currentUser } = useAppAuth();
+    const { addStockEntry } = useData();
     const [qty, setQty] = useState('');
     const [note, setNote] = useState('');
-    const handleSave = () => {
+    const handleSave = async () => {
         if (!qty) return;
-        const amount = parseFloat(qty);
-        const list = getList(KEYS.INGREDIENTS);
-        const idx = list.findIndex(i => i.id === ing.id);
-        if (idx !== -1) { list[idx] = { ...list[idx], currentStock: list[idx].currentStock + amount }; setList(KEYS.INGREDIENTS, list); }
-        addToList(KEYS.STOCK_ENTRIES, { id: generateId(), ingredientId: ing.id, quantity: amount, note, createdBy: currentUser?.id, createdAt: new Date().toISOString() });
-        doLogActivity(currentUser?.id, 'stock_in', `Nhập kho ${ing.name}: +${amount} ${ing.unit}`);
-        onSaved();
+        try {
+            await addStockEntry({
+                ingredientId: ing.id,
+                quantity: parseFloat(qty),
+                unitPrice: 0,
+                note
+            });
+            onSaved();
+        } catch (err) {
+            console.error("Error adding stock entry", err);
+        }
     };
     return (
         <Dialog open={true} onOpenChange={onClose}>
@@ -280,13 +325,14 @@ function StockInForm({ ing, onClose, onSaved }) {
 }
 
 function WasteForm({ ing, ingredients, onClose, onSaved }) {
-    const { currentUser } = useAppAuth();
+    const { addWasteRecord } = useData();
     const { toast } = useToast();
     const [ingId, setIngId] = useState(ing?.id || '');
     const [qty, setQty] = useState('');
     const [reason, setReason] = useState('');
-    const selectedIng = ingredients.find(i => i.id === ingId);
-    const handleSave = () => {
+    const selectedIng = ingredients.find(i => i.id === parseInt(ingId));
+    
+    const handleSave = async () => {
         if (!ingId || !qty || !reason.trim()) {
             toast({
                 variant: "destructive",
@@ -295,13 +341,21 @@ function WasteForm({ ing, ingredients, onClose, onSaved }) {
             });
             return;
         }
-        const amount = parseFloat(qty);
-        const list = getList(KEYS.INGREDIENTS);
-        const idx = list.findIndex(i => i.id === ingId);
-        if (idx !== -1) { list[idx] = { ...list[idx], currentStock: Math.max(0, list[idx].currentStock - amount) }; setList(KEYS.INGREDIENTS, list); }
-        addToList(KEYS.WASTE_RECORDS, { id: generateId(), ingredientId: ingId, quantity: amount, reason, createdBy: currentUser?.id, createdAt: new Date().toISOString() });
-        doLogActivity(currentUser?.id, 'waste', `Phiếu hủy ${selectedIng?.name}: -${amount} ${selectedIng?.unit}, lý do: ${reason}`);
-        onSaved();
+        try {
+            await addWasteRecord({
+                ingredientId: parseInt(ingId),
+                quantity: parseFloat(qty),
+                reason
+            });
+            onSaved();
+        } catch (err) {
+            console.error("Error adding waste record", err);
+            toast({
+                variant: "destructive",
+                title: "Thao tác thất bại",
+                description: err.response?.data?.message || "Không thể lưu phiếu hủy."
+            });
+        }
     };
     return (
         <Dialog open={true} onOpenChange={onClose}>
@@ -324,23 +378,27 @@ function WasteForm({ ing, ingredients, onClose, onSaved }) {
 }
 
 function StockTakeDialog({ ingredients, onClose, onSaved }) {
-    const { currentUser } = useAppAuth();
+    const { addStockTake } = useData();
     const [actuals, setActuals] = useState({});
     const [showConfirm, setShowConfirm] = useState(false);
-    const handleConfirm = () => {
-        const list = getList(KEYS.INGREDIENTS);
-        const stockTakeItems = [];
-        ingredients.forEach(ing => {
-            const actual = actuals[ing.id] !== undefined ? parseFloat(actuals[ing.id]) : ing.currentStock;
-            stockTakeItems.push({ ingredientId: ing.id, theoretical: ing.currentStock, actual, variance: actual - ing.currentStock });
-            const idx = list.findIndex(i => i.id === ing.id);
-            if (idx !== -1 && actuals[ing.id] !== undefined) list[idx] = { ...list[idx], currentStock: actual };
-        });
-        setList(KEYS.INGREDIENTS, list);
-        addToList(KEYS.STOCK_TAKES, { id: generateId(), date: new Date().toISOString(), items: stockTakeItems, confirmedBy: currentUser?.id });
-        doLogActivity(currentUser?.id, 'stock_take', 'Kiểm kê kho');
-        setShowConfirm(false);
-        onSaved();
+    
+    const handleConfirm = async () => {
+        try {
+            const promises = ingredients
+                .filter(ing => actuals[ing.id] !== undefined && actuals[ing.id] !== '')
+                .map(ing => {
+                    return addStockTake({
+                        ingredientId: ing.id,
+                        actualQty: parseFloat(actuals[ing.id]),
+                        note: "Kiểm kê định kỳ"
+                    });
+                });
+            await Promise.all(promises);
+            setShowConfirm(false);
+            onSaved();
+        } catch (err) {
+            console.error("Error confirming stock take", err);
+        }
     };
     return (
         <Dialog open={true} onOpenChange={onClose}>
@@ -351,7 +409,7 @@ function StockTakeDialog({ ingredients, onClose, onSaved }) {
                         <span>Nguyên liệu</span><span className="text-center">Lý thuyết</span><span className="text-center">Thực tế</span><span className="text-center">Lệch</span>
                     </div>
                     {ingredients.map(ing => {
-                        const actual = actuals[ing.id] !== undefined ? parseFloat(actuals[ing.id]) : null;
+                        const actual = actuals[ing.id] !== undefined && actuals[ing.id] !== '' ? parseFloat(actuals[ing.id]) : null;
                         const variance = actual !== null ? actual - ing.currentStock : null;
                         return (
                             <div key={ing.id} className="grid grid-cols-4 items-center gap-2 border border-amber-100 rounded-lg px-2 py-2">

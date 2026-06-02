@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useAppAuth } from '@/lib/appAuth';
-import { getList, KEYS } from '@/lib/storage';
+import { useData } from '@/lib/DataContext';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -21,27 +21,15 @@ const statusColor = {
 
 export default function OrderPanel({ table, onClose }) {
     const { currentUser, currentShift } = useAppAuth();
+    const { orders: allActiveOrders } = useData();
     const { toast } = useToast();
     const [showNewOrder, setShowNewOrder] = useState(false);
     const [selectedOrderId, setSelectedOrderId] = useState(null);
     const [payingOrderId, setPayingOrderId] = useState(null);
-    const [refresh, setRefresh] = useState(0);
 
-    const { activeOrders, menuItems } = useMemo(() => {
-        const orders = getList(KEYS.ORDERS);
-        const orderItems = getList(KEYS.ORDER_ITEMS);
-        const menuItems = getList(KEYS.MENU_ITEMS);
-        const active = orders
-            .filter(o => o.tableId === table.id && ['pending', 'confirmed', 'preparing', 'ready'].includes(o.status))
-            .map(o => ({
-                ...o,
-                items: orderItems.filter(i => i.orderId === o.id).map(i => ({
-                    ...i,
-                    menuItem: menuItems.find(m => m.id === i.menuItemId),
-                })),
-            }));
-        return { activeOrders: active, menuItems };
-    }, [table.id, refresh]);
+    const activeOrders = useMemo(() => {
+        return allActiveOrders.filter(o => o.tableId === table.id && ['pending', 'confirmed', 'preparing', 'ready'].includes(o.status));
+    }, [allActiveOrders, table.id]);
 
     const handleNewOrder = () => {
         if (!currentShift && currentUser?.role !== 'admin') {
@@ -57,14 +45,11 @@ export default function OrderPanel({ table, onClose }) {
 
     const handleOrderCreated = () => {
         setShowNewOrder(false);
-        setRefresh(r => r + 1);
     };
 
     const handlePaymentDone = () => {
         setPayingOrderId(null);
-        setRefresh(r => r + 1);
-        const orders = getList(KEYS.ORDERS);
-        const stillActive = orders.filter(o => o.tableId === table.id && ['pending', 'confirmed', 'preparing', 'ready'].includes(o.status));
+        const stillActive = allActiveOrders.filter(o => o.tableId === table.id && ['pending', 'confirmed', 'preparing', 'ready'].includes(o.status) && o.id !== payingOrderId);
         if (stillActive.length === 0) onClose();
     };
 
@@ -178,7 +163,7 @@ export default function OrderPanel({ table, onClose }) {
                     table={table}
                     existingOrderId={selectedOrderId}
                     onClose={() => setSelectedOrderId(null)}
-                    onCreated={() => { setSelectedOrderId(null); setRefresh(r => r + 1); }}
+                    onCreated={() => setSelectedOrderId(null)}
                 />
             )}
 

@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useAppAuth } from '@/lib/appAuth';
-import { getList, KEYS } from '@/lib/storage';
+import { useData } from '@/lib/DataContext';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Users, Plus } from 'lucide-react';
@@ -16,28 +16,24 @@ function getTableStatus(tableId, orders) {
 
 export default function Tables() {
     const { currentUser } = useAppAuth();
+    const { tables, orders, areas } = useData();
     const [selectedTable, setSelectedTable] = useState(null);
     const [showAddForm, setShowAddForm] = useState(false);
-    const [refresh, setRefresh] = useState(0);
 
-    const { tables, orders, groupedByArea, areas } = useMemo(() => {
-        const tables = getList(KEYS.TABLES);
-        const orders = getList(KEYS.ORDERS);
-        const areas = getList(KEYS.AREAS);
+    const groupedByArea = useMemo(() => {
         const finalAreas = areas.length > 0 ? areas : [
-            { id: 'indoor', name: 'Trong nhà' },
-            { id: 'outdoor', name: 'Ngoài trời' }
+            { id: 1, name: 'Trong nhà' },
+            { id: 2, name: 'Ngoài trời' }
         ];
 
-        const grouped = tables.reduce((acc, t) => {
-            const areaObj = finalAreas.find(a => a.id === t.area || a.name === t.area);
-            const areaName = areaObj ? areaObj.name : (t.area === 'indoor' ? 'Trong nhà' : (t.area === 'outdoor' ? 'Ngoài trời' : t.area));
+        return tables.reduce((acc, t) => {
+            const areaObj = finalAreas.find(a => a.id === t.areaId);
+            const areaName = areaObj ? areaObj.name : 'Khác';
             if (!acc[areaName]) acc[areaName] = [];
             acc[areaName].push({ ...t, status: getTableStatus(t.id, orders) });
             return acc;
         }, {});
-        return { tables, orders, groupedByArea: grouped, areas: finalAreas };
-    }, [refresh]);
+    }, [tables, orders, areas]);
 
     const handleTableClick = (table) => {
         setSelectedTable(table);
@@ -99,16 +95,14 @@ export default function Tables() {
             {selectedTable && (
                 <OrderPanel
                     table={selectedTable}
-                    onClose={() => { setSelectedTable(null); setRefresh(r => r + 1); }}
+                    onClose={() => setSelectedTable(null)}
                 />
             )}
 
             {showAddForm && (
                 <TableForm
-                    tables={tables}
-                    areas={areas}
                     onClose={() => setShowAddForm(false)}
-                    onSaved={() => { setShowAddForm(false); setRefresh(r => r + 1); }}
+                    onSaved={() => setShowAddForm(false)}
                 />
             )}
         </div>

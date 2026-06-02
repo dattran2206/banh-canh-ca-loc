@@ -1,7 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useAppAuth } from '@/lib/appAuth';
-import { getList, addToList, generateId, KEYS } from '@/lib/storage';
-import { doLogActivity } from '@/lib/appAuth';
+import { useData } from '@/lib/DataContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -11,17 +10,18 @@ import { cn } from '@/lib/utils';
 
 export default function NewOrderDialog({ table, existingOrderId = null, onClose, onCreated }) {
     const { currentUser, currentShift } = useAppAuth();
+    const { createOrder, appendOrderItems, categories: dataCategories, menuItems: dataMenuItems } = useData();
     const [cart, setCart] = useState([]);
     const [activeCategory, setActiveCategory] = useState('all');
     const [activeTab, setActiveTab] = useState('menu'); // 'menu' | 'cart'
 
     const { categories, menuItems } = useMemo(() => {
-        const cats = [{ id: 'all', name: 'Tất cả' }, ...getList(KEYS.CATEGORIES)];
-        const items = getList(KEYS.MENU_ITEMS).filter(m => m.isAvailable);
+        const cats = [{ id: 'all', name: 'Tất cả' }, ...dataCategories];
+        const items = dataMenuItems.filter(m => m.isAvailable);
         return { categories: cats, menuItems: items };
-    }, []);
+    }, [dataCategories, dataMenuItems]);
 
-    const filtered = activeCategory === 'all' ? menuItems : menuItems.filter(m => m.categoryId === activeCategory);
+    const filtered = activeCategory === 'all' ? menuItems : menuItems.filter(m => m.categoryId === activeCategory || m.categoryId.toString() === activeCategory.toString());
 
     const addToCart = (item) => {
         setCart(prev => {
@@ -46,45 +46,29 @@ export default function NewOrderDialog({ table, existingOrderId = null, onClose,
     const handleConfirm = () => {
         if (cart.length === 0) return;
 
-        const orders = getList(KEYS.ORDERS);
-        let orderId = existingOrderId;
+        const orderItemsDto = cart.map(item => ({
+            menuItemId: item.menuItemId,
+            quantity: item.quantity,
+            note: item.note || ''
+        }));
 
         if (!existingOrderId) {
-            // Get next order number for this table
-            const tableOrders = orders.filter(o => o.tableId === table.id);
-            const maxNum = tableOrders.reduce((max, o) => {
-                const num = parseInt(o.orderNumber?.replace('#', '') || '0');
-                return Math.max(max, num);
-            }, 0);
-            const orderNumber = '#' + String(maxNum + 1).padStart(3, '0');
-
-            const newOrder = {
-                id: generateId(),
+            createOrder({
                 tableId: table.id,
-                orderNumber,
                 shiftId: currentShift,
-                waiterId: currentUser?.id,
-                status: 'confirmed',
-                createdAt: new Date().toISOString(),
-            };
-            addToList(KEYS.ORDERS, newOrder);
-            orderId = newOrder.id;
-            doLogActivity(currentUser?.id, 'create_order', `Tạo order ${orderNumber} cho bàn ${table.number}`);
-        } else {
-            doLogActivity(currentUser?.id, 'add_items', `Thêm món vào order bàn ${table.number}`);
-        }
-
-        cart.forEach(item => {
-            addToList(KEYS.ORDER_ITEMS, {
-                id: generateId(),
-                orderId,
-                menuItemId: item.menuItemId,
-                quantity: item.quantity,
-                note: item.note || '',
+                items: orderItemsDto
+            }).then(() => {
+                onCreated();
+            }).catch(err => {
+                console.error("Error creating order", err);
             });
-        });
-
-        onCreated();
+        } else {
+            appendOrderItems(existingOrderId, orderItemsDto).then(() => {
+                onCreated();
+            }).catch(err => {
+                console.error("Error adding items to order", err);
+            });
+        }
     };
 
     const totalAmount = cart.reduce((s, c) => s + c.menuItem.price * c.quantity, 0);
@@ -130,7 +114,7 @@ export default function NewOrderDialog({ table, existingOrderId = null, onClose,
                                     onClick={() => setActiveCategory(cat.id)}
                                     className={cn(
                                         'px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors',
-                                        activeCategory === cat.id ? 'bg-amber-500 text-white' : 'bg-amber-100 text-amber-700 hover:bg-amber-200'
+                                        activeCategory.toString() === cat.id.toString() ? 'bg-amber-500 text-white' : 'bg-amber-100 text-amber-700 hover:bg-amber-200'
                                     )}
                                 >
                                     {cat.name}

@@ -1,65 +1,89 @@
-import React, { useState, useMemo } from 'react';
-import { getList, setList, KEYS } from '@/lib/storage';
+import React, { useState, useEffect, useMemo } from 'react';
+import { useData } from '@/lib/DataContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Plus, Trash2 } from 'lucide-react';
+import apiClient from '@/api/apiClient';
 
 export default function RecipeEditor({ menuItemId, onClose }) {
-    const [refresh, setRefresh] = useState(0);
-
-    const { menuItem, ingredients, recipeItems } = useMemo(() => {
-        const menuItems = getList(KEYS.MENU_ITEMS);
-        const ingredients = getList(KEYS.INGREDIENTS);
-        const recipeItems = getList(KEYS.RECIPE_ITEMS).filter(r => r.menuItemId === menuItemId);
-        return {
-            menuItem: menuItems.find(m => m.id === menuItemId),
-            ingredients,
-            recipeItems,
-        };
-    }, [menuItemId, refresh]);
-
+    const { menuItems, ingredients, saveRecipeItem, deleteRecipeItem } = useData();
+    const [recipeItems, setRecipeItems] = useState([]);
+    const [loading, setLoading] = useState(true);
     const [newIng, setNewIng] = useState({ ingredientId: '', quantity: '', yieldPercent: '100' });
 
-    const handleAdd = () => {
-        if (!newIng.ingredientId || !newIng.quantity) return;
-        const all = getList(KEYS.RECIPE_ITEMS);
-        // Remove existing if same ingredient
-        const filtered = all.filter(r => !(r.menuItemId === menuItemId && r.ingredientId === newIng.ingredientId));
-        filtered.push({
-            menuItemId,
-            ingredientId: newIng.ingredientId,
-            quantity: parseFloat(newIng.quantity),
-            yieldPercent: parseFloat(newIng.yieldPercent) / 100,
-        });
-        setList(KEYS.RECIPE_ITEMS, filtered);
-        setNewIng({ ingredientId: '', quantity: '', yieldPercent: '100' });
-        setRefresh(r => r + 1);
-    };
+    const menuItem = useMemo(() => menuItems.find(m => m.id === menuItemId), [menuItems, menuItemId]);
 
-    const handleDelete = (ingredientId) => {
-        const all = getList(KEYS.RECIPE_ITEMS);
-        setList(KEYS.RECIPE_ITEMS, all.filter(r => !(r.menuItemId === menuItemId && r.ingredientId === ingredientId)));
-        setRefresh(r => r + 1);
-    };
-
-    const handleUpdateYield = (ingredientId, yieldPct) => {
-        const all = getList(KEYS.RECIPE_ITEMS);
-        const idx = all.findIndex(r => r.menuItemId === menuItemId && r.ingredientId === ingredientId);
-        if (idx !== -1) {
-            all[idx] = { ...all[idx], yieldPercent: parseFloat(yieldPct) / 100 };
-            setList(KEYS.RECIPE_ITEMS, all);
-            setRefresh(r => r + 1);
+    const fetchRecipes = async () => {
+        setLoading(true);
+        try {
+            const res = await apiClient.get(`/menu/recipes/${menuItemId}`);
+            setRecipeItems(res.data);
+        } catch (err) {
+            console.error("Error fetching recipes", err);
+        } finally {
+            setLoading(false);
         }
     };
 
-    const handleUpdateQty = (ingredientId, qty) => {
-        const all = getList(KEYS.RECIPE_ITEMS);
-        const idx = all.findIndex(r => r.menuItemId === menuItemId && r.ingredientId === ingredientId);
-        if (idx !== -1) {
-            all[idx] = { ...all[idx], quantity: parseFloat(qty) };
-            setList(KEYS.RECIPE_ITEMS, all);
-            setRefresh(r => r + 1);
+    useEffect(() => {
+        fetchRecipes();
+    }, [menuItemId]);
+
+    const handleAdd = async () => {
+        if (!newIng.ingredientId || !newIng.quantity) return;
+        try {
+            await saveRecipeItem({
+                menuItemId,
+                ingredientId: parseInt(newIng.ingredientId),
+                quantity: parseFloat(newIng.quantity),
+                yieldPercent: parseFloat(newIng.yieldPercent) / 100
+            });
+            setNewIng({ ingredientId: '', quantity: '', yieldPercent: '100' });
+            await fetchRecipes();
+        } catch (err) {
+            console.error("Error adding recipe item", err);
+        }
+    };
+
+    const handleDelete = async (ingredientId) => {
+        try {
+            await deleteRecipeItem(menuItemId, ingredientId);
+            await fetchRecipes();
+        } catch (err) {
+            console.error("Error deleting recipe item", err);
+        }
+    };
+
+    const handleUpdateYield = async (ingredientId, yieldPct) => {
+        const item = recipeItems.find(r => r.ingredientId === ingredientId);
+        if (!item) return;
+        try {
+            await saveRecipeItem({
+                menuItemId,
+                ingredientId,
+                quantity: item.quantity,
+                yieldPercent: parseFloat(yieldPct) / 100
+            });
+            await fetchRecipes();
+        } catch (err) {
+            console.error("Error updating yield", err);
+        }
+    };
+
+    const handleUpdateQty = async (ingredientId, qty) => {
+        const item = recipeItems.find(r => r.ingredientId === ingredientId);
+        if (!item) return;
+        try {
+            await saveRecipeItem({
+                menuItemId,
+                ingredientId,
+                quantity: parseFloat(qty),
+                yieldPercent: item.yieldPercent
+            });
+            await fetchRecipes();
+        } catch (err) {
+            console.error("Error updating qty", err);
         }
     };
 
@@ -81,37 +105,43 @@ export default function RecipeEditor({ menuItemId, onClose }) {
                                 </tr>
                             </thead>
                             <tbody>
-                                {recipeItems.map(r => {
-                                    const ing = ingredients.find(i => i.id === r.ingredientId);
-                                    return (
-                                        <tr key={r.ingredientId} className="border-t border-amber-50">
-                                            <td className="px-3 py-2">{ing?.name} ({ing?.unit})</td>
-                                            <td className="px-3 py-2">
-                                                <Input
-                                                    type="number"
-                                                    defaultValue={r.quantity}
-                                                    onBlur={e => handleUpdateQty(r.ingredientId, e.target.value)}
-                                                    className="w-20 h-7 text-xs border-amber-200"
-                                                />
-                                            </td>
-                                            <td className="px-3 py-2">
-                                                <Input
-                                                    type="number"
-                                                    defaultValue={Math.round(r.yieldPercent * 100)}
-                                                    onBlur={e => handleUpdateYield(r.ingredientId, e.target.value)}
-                                                    className="w-20 h-7 text-xs border-amber-200"
-                                                />
-                                            </td>
-                                            <td className="px-3 py-2">
-                                                <button onClick={() => handleDelete(r.ingredientId)} className="text-red-400 hover:text-red-600">
-                                                    <Trash2 className="w-4 h-4" />
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    );
-                                })}
-                                {recipeItems.length === 0 && (
-                                    <tr><td colSpan={4} className="text-center text-gray-400 py-4 text-sm">Chưa có nguyên liệu nào</td></tr>
+                                {loading ? (
+                                    <tr><td colSpan={4} className="text-center py-4 text-sm text-gray-500">Đang tải...</td></tr>
+                                ) : (
+                                    <>
+                                        {recipeItems.map(r => {
+                                            const ing = ingredients.find(i => i.id === r.ingredientId);
+                                            return (
+                                                <tr key={r.ingredientId} className="border-t border-amber-50">
+                                                    <td className="px-3 py-2">{ing?.name} ({ing?.unit})</td>
+                                                    <td className="px-3 py-2">
+                                                        <Input
+                                                            type="number"
+                                                            defaultValue={r.quantity}
+                                                            onBlur={e => handleUpdateQty(r.ingredientId, e.target.value)}
+                                                            className="w-20 h-7 text-xs border-amber-200"
+                                                        />
+                                                    </td>
+                                                    <td className="px-3 py-2">
+                                                        <Input
+                                                            type="number"
+                                                            defaultValue={Math.round(r.yieldPercent * 100)}
+                                                            onBlur={e => handleUpdateYield(r.ingredientId, e.target.value)}
+                                                            className="w-20 h-7 text-xs border-amber-200"
+                                                        />
+                                                    </td>
+                                                    <td className="px-3 py-2">
+                                                        <button onClick={() => handleDelete(r.ingredientId)} className="text-red-400 hover:text-red-600">
+                                                            <Trash2 className="w-4 h-4" />
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            );
+                                        })}
+                                        {recipeItems.length === 0 && (
+                                            <tr><td colSpan={4} className="text-center text-gray-400 py-4 text-sm">Chưa có nguyên liệu nào</td></tr>
+                                        )}
+                                    </>
                                 )}
                             </tbody>
                         </table>

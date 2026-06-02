@@ -1,26 +1,17 @@
 import React, { useState, useMemo } from 'react';
-import { getList, setList, addToList, generateId, KEYS } from '@/lib/storage';
-import { useAppAuth, doLogActivity } from '@/lib/appAuth';
+import { useData } from '@/lib/DataContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
-/**
- * @typedef {Object} TableFormProps
- * @property {any} [table]
- * @property {any[]} tables
- * @property {any[]} areas
- * @property {() => void} onClose
- * @property {() => void} onSaved
- */
+export default function TableForm({ table = null, tables: propTables = null, areas: propAreas = null, onClose, onSaved }) {
+    const contextData = useData();
 
-/**
- * @param {TableFormProps} props
- */
-export default function TableForm({ table, tables, areas, onClose, onSaved }) {
-    const { currentUser } = useAppAuth();
-    
+    const tables = propTables || contextData.tables;
+    const areas = propAreas || contextData.areas;
+    const { addTable, updateTable } = contextData;
+
     // Auto suggest next table number if creating new table
     const defaultNumber = useMemo(() => {
         if (table) return table.number;
@@ -30,7 +21,7 @@ export default function TableForm({ table, tables, areas, onClose, onSaved }) {
 
     const [form, setForm] = useState({
         number: table?.number || defaultNumber,
-        area: table?.area || (areas[0]?.id || 'indoor'),
+        areaId: table?.areaId || (areas[0]?.id || 1),
         capacity: table?.capacity || 4,
     });
     
@@ -59,24 +50,28 @@ export default function TableForm({ table, tables, areas, onClose, onSaved }) {
 
         if (table) {
             // Edit existing table
-            const list = getList(KEYS.TABLES);
-            const idx = list.findIndex(t => t.id === table.id);
-            if (idx !== -1) {
-                list[idx] = { ...list[idx], number: num, area: form.area, capacity: cap };
-                setList(KEYS.TABLES, list);
-            }
-            doLogActivity(currentUser?.id, 'edit_table', `Sửa thông tin bàn B${num}`);
+            updateTable(table.id, {
+                id: table.id,
+                number: num,
+                areaId: parseInt(form.areaId.toString()),
+                capacity: cap
+            })
+            .then(() => onSaved())
+            .catch(err => {
+                setError(err.response?.data?.message || 'Không thể lưu bàn ăn');
+            });
         } else {
             // Add new table
-            addToList(KEYS.TABLES, {
-                id: generateId(),
+            addTable({
                 number: num,
-                area: form.area,
+                areaId: parseInt(form.areaId.toString()),
                 capacity: cap
+            })
+            .then(() => onSaved())
+            .catch(err => {
+                setError(err.response?.data?.message || 'Không thể tạo bàn ăn');
             });
-            doLogActivity(currentUser?.id, 'add_table', `Thêm bàn ăn B${num}`);
         }
-        onSaved();
     };
 
     return (
@@ -104,8 +99,8 @@ export default function TableForm({ table, tables, areas, onClose, onSaved }) {
                     <div className="space-y-1">
                         <Label className="text-amber-800">Khu vực</Label>
                         <select 
-                            value={form.area} 
-                            onChange={e => setForm(f => ({ ...f, area: e.target.value }))} 
+                            value={form.areaId} 
+                            onChange={e => setForm(f => ({ ...f, areaId: e.target.value }))} 
                             className="w-full mt-1 border border-amber-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-amber-500 bg-white"
                         >
                             {areas.map(a => (

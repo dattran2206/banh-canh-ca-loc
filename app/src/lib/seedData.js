@@ -92,8 +92,8 @@ export async function initializeSeedData() {
     ];
 
     const shopInfo = {
-        name: 'Quán Bánh Canh Cá Lóc',
-        address: '123 Đường Lê Lợi, Q.1, TP.HCM',
+        name: 'Quán Bánh Canh Cá Lóc Gia Hiếu',
+        address: 'Xóm 3, Thôn Thu Xà, Xã Tư Nghĩa, Tỉnh Quảng Ngãi',
         phone: '0901 234 567',
     };
 

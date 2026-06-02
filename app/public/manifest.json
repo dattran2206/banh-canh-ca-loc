@@ -1,0 +1,15 @@
+{
+  "short_name": "BanhCanhCaLoc",
+  "name": "Bánh Canh Cá Lóc POS",
+  "icons": [
+    {
+      "src": "banh_canh_logo.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ],
+  "start_url": "/",
+  "background_color": "#FFFBEB",
+  "theme_color": "#F59E0B",
+  "display": "standalone"
+}

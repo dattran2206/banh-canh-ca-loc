@@ -1,5 +1,5 @@
-import React, { useState, useMemo } from 'react';
-import { getList, setList, addToList, removeFromList, generateId, KEYS } from '@/lib/storage';
+import React, { useState } from 'react';
+import { useData } from '@/lib/DataContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -8,8 +8,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Switch } from '@/components/ui/switch';
 import { Plus, Pencil, Trash2, ChefHat } from 'lucide-react';
 import { useAppAuth } from '@/lib/appAuth';
-import { doLogActivity } from '@/lib/appAuth';
 import RecipeEditor from '@/components/RecipeEditor';
+import apiClient from '@/api/apiClient';
 import { 
     AlertDialog, 
     AlertDialogContent, 
@@ -23,7 +23,7 @@ import {
 
 export default function Menu() {
     const { currentUser } = useAppAuth();
-    const [refresh, setRefresh] = useState(0);
+    const { categories, menuItems, updateMenuItem, deleteMenuItem, refreshCategories, refreshMenuItems } = useData();
     const [editItem, setEditItem] = useState(null);
     const [showForm, setShowForm] = useState(false);
     const [recipeItemId, setRecipeItemId] = useState(null);
@@ -33,35 +33,38 @@ export default function Menu() {
     const [deleteConfirmItem, setDeleteConfirmItem] = useState(null);
     const [deleteConfirmCat, setDeleteConfirmCat] = useState(null);
 
-    const { categories, menuItems } = useMemo(() => {
-        return { categories: getList(KEYS.CATEGORIES), menuItems: getList(KEYS.MENU_ITEMS) };
-    }, [refresh]);
-
     const filtered = activeCategory === 'all' ? menuItems : menuItems.filter(m => m.categoryId === activeCategory);
 
-    const handleToggleAvailable = (item) => {
-        const items = getList(KEYS.MENU_ITEMS);
-        const idx = items.findIndex(i => i.id === item.id);
-        if (idx !== -1) {
-            items[idx] = { ...items[idx], isAvailable: !items[idx].isAvailable };
-            setList(KEYS.MENU_ITEMS, items);
-            setRefresh(r => r + 1);
+    const handleToggleAvailable = async (item) => {
+        try {
+            await updateMenuItem(item.id, {
+                ...item,
+                isAvailable: !item.isAvailable
+            });
+        } catch (err) {
+            console.error("Error toggling availability", err);
         }
     };
 
-    const confirmDeleteItem = () => {
+    const confirmDeleteItem = async () => {
         if (!deleteConfirmItem) return;
-        removeFromList(KEYS.MENU_ITEMS, deleteConfirmItem);
-        doLogActivity(currentUser?.id, 'delete_menu_item', `Xóa món ăn`);
-        setDeleteConfirmItem(null);
-        setRefresh(r => r + 1);
+        try {
+            await deleteMenuItem(deleteConfirmItem);
+            setDeleteConfirmItem(null);
+        } catch (err) {
+            console.error("Error deleting item", err);
+        }
     };
 
-    const confirmDeleteCategory = () => {
+    const confirmDeleteCategory = async () => {
         if (!deleteConfirmCat) return;
-        removeFromList(KEYS.CATEGORIES, deleteConfirmCat);
-        setDeleteConfirmCat(null);
-        setRefresh(r => r + 1);
+        try {
+            await apiClient.delete(`/menu/categories/${deleteConfirmCat}`);
+            await refreshCategories();
+            setDeleteConfirmCat(null);
+        } catch (err) {
+            console.error("Error deleting category", err);
+        }
     };
 
     return (
@@ -140,7 +143,7 @@ export default function Menu() {
                     item={editItem}
                     categories={categories}
                     onClose={() => { setShowForm(false); setEditItem(null); }}
-                    onSaved={() => { setShowForm(false); setEditItem(null); setRefresh(r => r + 1); }}
+                    onSaved={() => { setShowForm(false); setEditItem(null); }}
                 />
             )}
 
@@ -148,7 +151,7 @@ export default function Menu() {
                 <CategoryForm
                     cat={editCat}
                     onClose={() => { setShowCatForm(false); setEditCat(null); }}
-                    onSaved={() => { setShowCatForm(false); setEditCat(null); setRefresh(r => r + 1); }}
+                    onSaved={() => { setShowCatForm(false); setEditCat(null); }}
                 />
             )}
 
@@ -204,7 +207,7 @@ export default function Menu() {
 }
 
 function MenuItemForm({ item, categories, onClose, onSaved }) {
-    const { currentUser } = useAppAuth();
+    const { addMenuItem, updateMenuItem } = useData();
     const [form, setForm] = useState({
         name: item?.name || '',
         categoryId: item?.categoryId || '',
@@ -213,21 +216,23 @@ function MenuItemForm({ item, categories, onClose, onSaved }) {
         isAvailable: item?.isAvailable !== false,
     });
 
-    const handleSave = () => {
+    const handleSave = async () => {
         if (!form.name || !form.price) return;
-        if (item) {
-            const items = getList(KEYS.MENU_ITEMS);
-            const idx = items.findIndex(i => i.id === item.id);
-            if (idx !== -1) {
-                items[idx] = { ...items[idx], ...form, price: parseFloat(form.price) };
-                setList(KEYS.MENU_ITEMS, items);
+        try {
+            const payload = {
+                ...form,
+                price: parseFloat(form.price),
+                categoryId: form.categoryId ? parseInt(form.categoryId) : null
+            };
+            if (item) {
+                await updateMenuItem(item.id, { ...item, ...payload });
+            } else {
+                await addMenuItem(payload);
             }
-            doLogActivity(currentUser?.id, 'edit_menu_item', `Sửa món ${form.name}`);
-        } else {
-            addToList(KEYS.MENU_ITEMS, { id: generateId(), ...form, price: parseFloat(form.price) });
-            doLogActivity(currentUser?.id, 'add_menu_item', `Thêm món ${form.name}`);
+            onSaved();
+        } catch (err) {
+            console.error("Error saving menu item", err);
         }
-        onSaved();
     };
 
     return (
@@ -254,17 +259,22 @@ function MenuItemForm({ item, categories, onClose, onSaved }) {
 }
 
 function CategoryForm({ cat, onClose, onSaved }) {
+    const { refreshCategories } = useData();
     const [name, setName] = useState(cat?.name || '');
-    const handleSave = () => {
+
+    const handleSave = async () => {
         if (!name.trim()) return;
-        if (cat) {
-            const cats = getList(KEYS.CATEGORIES);
-            const idx = cats.findIndex(c => c.id === cat.id);
-            if (idx !== -1) { cats[idx] = { ...cats[idx], name }; setList(KEYS.CATEGORIES, cats); }
-        } else {
-            addToList(KEYS.CATEGORIES, { id: generateId(), name });
+        try {
+            if (cat) {
+                await apiClient.put(`/menu/categories/${cat.id}`, { id: cat.id, name });
+            } else {
+                await apiClient.post('/menu/categories', { name });
+            }
+            await refreshCategories();
+            onSaved();
+        } catch (err) {
+            console.error("Error saving category", err);
         }
-        onSaved();
     };
     return (
         <Dialog open={true} onOpenChange={onClose}>

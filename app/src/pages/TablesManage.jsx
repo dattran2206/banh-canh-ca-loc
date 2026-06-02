@@ -1,7 +1,6 @@
 import React, { useState, useMemo } from 'react';
-import { getList, setList, addToList, generateId, KEYS } from '@/lib/storage';
+import { useData } from '@/lib/DataContext';
 import { useAppAuth } from '@/lib/appAuth';
-import { doLogActivity } from '@/lib/appAuth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -21,11 +20,12 @@ import { useToast } from '@/components/ui/use-toast';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Plus, Pencil, Trash2, MapPin, Users } from 'lucide-react';
 import TableForm from '@/components/TableForm';
+import apiClient from '@/api/apiClient';
 
 export default function TablesManage() {
     const { currentUser } = useAppAuth();
     const { toast } = useToast();
-    const [refresh, setRefresh] = useState(0);
+    const { tables, areas, orders, deleteTable, deleteArea } = useData();
     const [showForm, setShowForm] = useState(false);
     const [editTable, setEditTable] = useState(null);
     const [deleteConfirmTable, setDeleteConfirmTable] = useState(null);
@@ -35,29 +35,17 @@ export default function TablesManage() {
     const [editArea, setEditArea] = useState(null);
     const [deleteConfirmArea, setDeleteConfirmArea] = useState(null);
 
-    const { tables, areas, activeTableIds } = useMemo(() => {
-        const list = getList(KEYS.TABLES).sort((a, b) => a.number - b.number);
-        const orders = getList(KEYS.ORDERS);
-        const rawAreas = getList(KEYS.AREAS);
+    const sortedTables = useMemo(() => {
+        return [...tables].sort((a, b) => a.number - b.number);
+    }, [tables]);
 
-        // Seed areas dynamically if not exists
-        let finalAreas = rawAreas;
-        if (rawAreas.length === 0) {
-            finalAreas = [
-                { id: 'indoor', name: 'Trong nhà' },
-                { id: 'outdoor', name: 'Ngoài trời' }
-            ];
-            setList(KEYS.AREAS, finalAreas);
-        }
-        
-        // Find which tables currently have active orders
-        const activeIds = new Set(
+    const activeTableIds = useMemo(() => {
+        return new Set(
             orders
                 .filter(o => ['pending', 'confirmed', 'preparing', 'ready'].includes(o.status))
                 .map(o => o.tableId)
         );
-        return { tables: list, areas: finalAreas, activeTableIds: activeIds };
-    }, [refresh]);
+    }, [orders]);
 
     const handleDelete = (table) => {
         if (activeTableIds.has(table.id)) {
@@ -71,22 +59,27 @@ export default function TablesManage() {
         setDeleteConfirmTable(table);
     };
 
-    const confirmDelete = () => {
+    const confirmDelete = async () => {
         if (!deleteConfirmTable) return;
-        const list = getList(KEYS.TABLES).filter(t => t.id !== deleteConfirmTable.id);
-        setList(KEYS.TABLES, list);
-        doLogActivity(currentUser?.id, 'delete_table', `Xóa bàn B${deleteConfirmTable.number}`);
-        toast({
-            title: "Xóa bàn thành công",
-            description: `Bàn B${deleteConfirmTable.number} đã được gỡ khỏi hệ thống.`,
-        });
-        setDeleteConfirmTable(null);
-        setRefresh(r => r + 1);
+        try {
+            await deleteTable(deleteConfirmTable.id);
+            toast({
+                title: "Xóa bàn thành công",
+                description: `Bàn B${deleteConfirmTable.number} đã được gỡ khỏi hệ thống.`,
+            });
+            setDeleteConfirmTable(null);
+        } catch (err) {
+            console.error("Error deleting table", err);
+            toast({
+                variant: "destructive",
+                title: "Lỗi xóa bàn",
+                description: err.response?.data?.message || "Không thể xóa bàn ăn này."
+            });
+        }
     };
 
     const handleDeleteArea = (area) => {
-        // Kiểm tra xem có bàn nào thuộc khu vực này không
-        const tablesInArea = tables.filter(t => t.area === area.id || t.area === area.name);
+        const tablesInArea = tables.filter(t => t.areaId === area.id);
         if (tablesInArea.length > 0) {
             toast({
                 variant: "destructive",
@@ -98,17 +91,23 @@ export default function TablesManage() {
         setDeleteConfirmArea(area);
     };
 
-    const confirmDeleteArea = () => {
+    const confirmDeleteArea = async () => {
         if (!deleteConfirmArea) return;
-        const list = getList(KEYS.AREAS).filter(a => a.id !== deleteConfirmArea.id);
-        setList(KEYS.AREAS, list);
-        doLogActivity(currentUser?.id, 'delete_area', `Xóa khu vực "${deleteConfirmArea.name}"`);
-        toast({
-            title: "Xóa khu vực thành công",
-            description: `Khu vực "${deleteConfirmArea.name}" đã được gỡ khỏi hệ thống.`,
-        });
-        setDeleteConfirmArea(null);
-        setRefresh(r => r + 1);
+        try {
+            await deleteArea(deleteConfirmArea.id);
+            toast({
+                title: "Xóa khu vực thành công",
+                description: `Khu vực "${deleteConfirmArea.name}" đã được gỡ khỏi hệ thống.`,
+            });
+            setDeleteConfirmArea(null);
+        } catch (err) {
+            console.error("Error deleting area", err);
+            toast({
+                variant: "destructive",
+                title: "Không thể xóa khu vực!",
+                description: err.response?.data?.message || "Có lỗi xảy ra khi xóa khu vực."
+            });
+        }
     };
 
     return (
@@ -159,10 +158,9 @@ export default function TablesManage() {
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-amber-100">
-                                {tables.map(table => {
+                                {sortedTables.map(table => {
                                     const isActive = activeTableIds.has(table.id);
-                                    const areaObj = areas.find(a => a.id === table.area || a.name === table.area);
-                                    const areaName = areaObj ? areaObj.name : table.area;
+                                    const areaName = table.area?.name || "Khu vực khác";
                                     return (
                                         <tr key={table.id} className="hover:bg-amber-50/50 transition-colors">
                                             <td className="px-6 py-4 font-bold text-amber-950 text-base">Bàn B{table.number}</td>
@@ -205,7 +203,7 @@ export default function TablesManage() {
                                         </tr>
                                     );
                                 })}
-                                {tables.length === 0 && (
+                                {sortedTables.length === 0 && (
                                     <tr>
                                         <td colSpan={5} className="text-center py-10 text-gray-400">
                                             Chưa có bàn ăn nào được cấu hình
@@ -239,7 +237,7 @@ export default function TablesManage() {
                             </thead>
                             <tbody className="divide-y divide-amber-100">
                                 {areas.map(area => {
-                                    const tablesInArea = tables.filter(t => t.area === area.id || t.area === area.name);
+                                    const tablesInArea = tables.filter(t => t.areaId === area.id);
                                     return (
                                         <tr key={area.id} className="hover:bg-amber-50/50 transition-colors">
                                             <td className="px-6 py-4 font-bold text-amber-950 text-base flex items-center gap-2">
@@ -291,7 +289,7 @@ export default function TablesManage() {
                     tables={tables}
                     areas={areas}
                     onClose={() => { setShowForm(false); setEditTable(null); }}
-                    onSaved={() => { setShowForm(false); setEditTable(null); setRefresh(r => r + 1); }}
+                    onSaved={() => { setShowForm(false); setEditTable(null); }}
                 />
             )}
 
@@ -300,7 +298,7 @@ export default function TablesManage() {
                     area={editArea}
                     areas={areas}
                     onClose={() => { setShowAreaForm(false); setEditArea(null); }}
-                    onSaved={() => { setShowAreaForm(false); setEditArea(null); setRefresh(r => r + 1); }}
+                    onSaved={() => { setShowAreaForm(false); setEditArea(null); }}
                 />
             )}
 
@@ -351,23 +349,12 @@ export default function TablesManage() {
     );
 }
 
-/**
- * @typedef {Object} AreaFormProps
- * @property {any} [area]
- * @property {any[]} areas
- * @property {() => void} onClose
- * @property {() => void} onSaved
- */
-
-/**
- * @param {AreaFormProps} props
- */
 function AreaForm({ area, areas, onClose, onSaved }) {
-    const { currentUser } = useAppAuth();
+    const { addArea, refreshAreas } = useData();
     const [name, setName] = useState(area?.name || '');
     const [error, setError] = useState('');
 
-    const handleSave = () => {
+    const handleSave = async () => {
         const trimmedName = name.trim();
         if (!trimmedName) {
             setError('Tên khu vực không được để trống!');
@@ -381,24 +368,20 @@ function AreaForm({ area, areas, onClose, onSaved }) {
             return;
         }
 
-        if (area) {
-            // Edit existing area
-            const list = getList(KEYS.AREAS);
-            const idx = list.findIndex(a => a.id === area.id);
-            if (idx !== -1) {
-                list[idx] = { ...list[idx], name: trimmedName };
-                setList(KEYS.AREAS, list);
+        try {
+            if (area) {
+                // Edit existing area
+                await apiClient.put(`/tables/areas/${area.id}`, { id: area.id, name: trimmedName });
+                await refreshAreas();
+            } else {
+                // Add new area
+                await addArea({ name: trimmedName });
             }
-            doLogActivity(currentUser?.id, 'edit_area', `Sửa khu vực thành "${trimmedName}"`);
-        } else {
-            // Add new area
-            addToList(KEYS.AREAS, {
-                id: generateId(),
-                name: trimmedName
-            });
-            doLogActivity(currentUser?.id, 'add_area', `Thêm khu vực "${trimmedName}"`);
+            onSaved();
+        } catch (err) {
+            console.error("Error saving area", err);
+            setError("Có lỗi xảy ra khi lưu khu vực.");
         }
-        onSaved();
     };
 
     return (

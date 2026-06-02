@@ -1,7 +1,5 @@
-import React, { useState, useMemo } from 'react';
-import { getList, setList, addToList, generateId, KEYS } from '@/lib/storage';
+import React, { useState, useEffect } from 'react';
 import { useAppAuth } from '@/lib/appAuth';
-import { doLogActivity } from '@/lib/appAuth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -11,8 +9,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Switch } from '@/components/ui/switch';
 import { Plus, Pencil } from 'lucide-react';
 import { format } from 'date-fns';
-import bcrypt from 'bcryptjs';
 import { useToast } from '@/components/ui/use-toast';
+import apiClient from '@/api/apiClient';
 
 const roleLabel = { admin: 'Chủ quán', cashier: 'Thu ngân', waiter: 'Bồi bàn', kitchen: 'Bếp' };
 const roleColor = { admin: 'bg-purple-100 text-purple-700', cashier: 'bg-blue-100 text-blue-700', waiter: 'bg-amber-100 text-amber-700', kitchen: 'bg-red-100 text-red-700' };
@@ -20,16 +18,43 @@ const roleColor = { admin: 'bg-purple-100 text-purple-700', cashier: 'bg-blue-10
 export default function Staff() {
     const { currentUser } = useAppAuth();
     const { toast } = useToast();
+    const [users, setUsers] = useState([]);
+    const [logs, setLogs] = useState([]);
+    const [loadingUsers, setLoadingUsers] = useState(true);
+    const [loadingLogs, setLoadingLogs] = useState(true);
     const [refresh, setRefresh] = useState(0);
     const [showForm, setShowForm] = useState(false);
     const [editUser, setEditUser] = useState(null);
 
-    const { users, logs } = useMemo(() => ({
-        users: getList(KEYS.USERS),
-        logs: getList(KEYS.ACTIVITY_LOGS).slice(-100).reverse(),
-    }), [refresh]);
+    useEffect(() => {
+        setLoadingUsers(true);
+        apiClient.get('/staff')
+            .then(res => {
+                setUsers(res.data);
+            })
+            .catch(err => {
+                console.error("Error fetching staff", err);
+            })
+            .finally(() => {
+                setLoadingUsers(false);
+            });
+    }, [refresh]);
 
-    const handleToggleActive = (user) => {
+    useEffect(() => {
+        setLoadingLogs(true);
+        apiClient.get('/reports/activity-logs')
+            .then(res => {
+                setLogs(res.data);
+            })
+            .catch(err => {
+                console.error("Error fetching activity logs", err);
+            })
+            .finally(() => {
+                setLoadingLogs(false);
+            });
+    }, [refresh]);
+
+    const handleToggleActive = async (user) => {
         if (user.id === currentUser?.id) {
             toast({
                 variant: "destructive",
@@ -38,9 +63,17 @@ export default function Staff() {
             });
             return;
         }
-        const list = getList(KEYS.USERS);
-        const idx = list.findIndex(u => u.id === user.id);
-        if (idx !== -1) { list[idx] = { ...list[idx], isActive: !list[idx].isActive }; setList(KEYS.USERS, list); setRefresh(r => r + 1); }
+        try {
+            await apiClient.put(`/staff/${user.id}/toggle-active`);
+            setRefresh(r => r + 1);
+        } catch (err) {
+            console.error("Error toggling user status", err);
+            toast({
+                variant: "destructive",
+                title: "Thao tác thất bại",
+                description: err.response?.data?.message || "Không thể cập nhật trạng thái tài khoản."
+            });
+        }
     };
 
     return (
@@ -59,46 +92,51 @@ export default function Staff() {
                 </TabsList>
 
                 <TabsContent value="list" className="mt-4">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                        {users.map(user => (
-                            <div key={user.id} className={`border rounded-xl p-4 bg-white ${!user.isActive ? 'opacity-50' : 'border-amber-200'}`}>
-                                <div className="flex items-start justify-between mb-2">
-                                    <div>
-                                        <p className="font-semibold text-amber-900">{user.fullName}</p>
-                                        <p className="text-xs text-gray-500">@{user.username}</p>
+                    {loadingUsers ? (
+                        <p className="text-amber-600 text-center py-8">Đang tải...</p>
+                    ) : (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                            {users.map(user => (
+                                <div key={user.id} className={`border rounded-xl p-4 bg-white ${!user.isActive ? 'opacity-50' : 'border-amber-200'}`}>
+                                    <div className="flex items-start justify-between mb-2">
+                                        <div>
+                                            <p className="font-semibold text-amber-900">{user.fullName}</p>
+                                            <p className="text-xs text-gray-500">@{user.username}</p>
+                                        </div>
+                                        <Badge className={`text-xs ${roleColor[user.role]}`}>{roleLabel[user.role]}</Badge>
                                     </div>
-                                    <Badge className={`text-xs ${roleColor[user.role]}`}>{roleLabel[user.role]}</Badge>
-                                </div>
-                                <div className="flex items-center justify-between mt-3">
-                                    <div className="flex items-center gap-2">
-                                        <Switch checked={user.isActive} onCheckedChange={() => handleToggleActive(user)} />
-                                        <span className="text-xs text-gray-500">{user.isActive ? 'Đang hoạt động' : 'Đã khóa'}</span>
+                                    <div className="flex items-center justify-between mt-3">
+                                        <div className="flex items-center gap-2">
+                                            <Switch checked={user.isActive} onCheckedChange={() => handleToggleActive(user)} />
+                                            <span className="text-xs text-gray-500">{user.isActive ? 'Đang hoạt động' : 'Đã khóa'}</span>
+                                        </div>
+                                        <Button size="sm" variant="outline" onClick={() => { setEditUser(user); setShowForm(true); }} className="border-amber-200 text-amber-700 text-xs">
+                                            <Pencil className="w-3 h-3 mr-1" /> Sửa
+                                        </Button>
                                     </div>
-                                    <Button size="sm" variant="outline" onClick={() => { setEditUser(user); setShowForm(true); }} className="border-amber-200 text-amber-700 text-xs">
-                                        <Pencil className="w-3 h-3 mr-1" /> Sửa
-                                    </Button>
                                 </div>
-                            </div>
-                        ))}
-                    </div>
+                            ))}
+                        </div>
+                    )}
                 </TabsContent>
 
                 <TabsContent value="logs" className="mt-4">
-                    <div className="space-y-2">
-                        {logs.length === 0 && <p className="text-amber-600 text-center py-8">Chưa có lịch sử hoạt động</p>}
-                        {logs.map(log => {
-                            const user = users.find(u => u.id === log.userId);
-                            return (
+                    {loadingLogs ? (
+                        <p className="text-amber-600 text-center py-8">Đang tải...</p>
+                    ) : (
+                        <div className="space-y-2">
+                            {logs.length === 0 && <p className="text-amber-600 text-center py-8">Chưa có lịch sử hoạt động</p>}
+                            {logs.map(log => (
                                 <div key={log.id} className="border border-amber-100 rounded-xl px-4 py-2.5 bg-white flex items-center justify-between">
                                     <div>
-                                        <p className="text-sm font-medium text-amber-900">{user?.fullName || 'Unknown'}</p>
+                                        <p className="text-sm font-medium text-amber-900">{log.userFullName}</p>
                                         <p className="text-xs text-gray-600">{log.detail}</p>
                                     </div>
                                     <p className="text-xs text-gray-400">{format(new Date(log.timestamp), 'dd/MM HH:mm')}</p>
                                 </div>
-                            );
-                        })}
-                    </div>
+                            ))}
+                        </div>
+                    )}
                 </TabsContent>
             </Tabs>
 
@@ -114,7 +152,6 @@ export default function Staff() {
 }
 
 function StaffForm({ user, onSaved, onClose }) {
-    const { currentUser } = useAppAuth();
     const { toast } = useToast();
     const [form, setForm] = useState({
         fullName: user?.fullName || '',
@@ -135,16 +172,17 @@ function StaffForm({ user, onSaved, onClose }) {
         }
         setLoading(true);
         try {
-            const users = getList(KEYS.USERS);
             if (user) {
-                const idx = users.findIndex(u => u.id === user.id);
-                if (idx !== -1) {
-                    const updated = { ...users[idx], fullName: form.fullName, username: form.username, role: form.role };
-                    if (form.password) updated.passwordHash = await bcrypt.hash(form.password, 10);
-                    users[idx] = updated;
-                    setList(KEYS.USERS, users);
-                    doLogActivity(currentUser?.id, 'edit_staff', `Sửa thông tin NV ${form.fullName}`);
-                }
+                await apiClient.put(`/staff/${user.id}`, {
+                    fullName: form.fullName,
+                    username: form.username,
+                    role: form.role,
+                    password: form.password || null
+                });
+                toast({
+                    title: "Cập nhật thành công",
+                    description: `Đã cập nhật thông tin nhân viên ${form.fullName}.`,
+                });
             } else {
                 if (!form.password) {
                     toast({
@@ -154,20 +192,25 @@ function StaffForm({ user, onSaved, onClose }) {
                     });
                     return;
                 }
-                const exists = users.find(u => u.username === form.username);
-                if (exists) {
-                    toast({
-                        variant: "destructive",
-                        title: "Trùng lặp tên đăng nhập",
-                        description: "Tên đăng nhập đã tồn tại!",
-                    });
-                    return;
-                }
-                const hash = await bcrypt.hash(form.password, 10);
-                addToList(KEYS.USERS, { id: generateId(), username: form.username, passwordHash: hash, fullName: form.fullName, role: form.role, isActive: true });
-                doLogActivity(currentUser?.id, 'add_staff', `Thêm nhân viên ${form.fullName}`);
+                await apiClient.post('/staff', {
+                    fullName: form.fullName,
+                    username: form.username,
+                    role: form.role,
+                    password: form.password
+                });
+                toast({
+                    title: "Thêm thành công",
+                    description: `Đã tạo nhân viên ${form.fullName}.`,
+                });
             }
             onSaved();
+        } catch (err) {
+            console.error("Error saving staff user", err);
+            toast({
+                variant: "destructive",
+                title: "Lưu thất bại",
+                description: err.response?.data?.message || "Lỗi xảy ra khi lưu nhân viên."
+            });
         } finally {
             setLoading(false);
         }

@@ -1,0 +1,112 @@
+# ====================================================================
+# Global .gitignore for Banh Canh Ca Loc (React Frontend & .NET Backend)
+# ====================================================================
+
+# --------------------------------------------------------------------
+# OS & General Editor ignores
+# --------------------------------------------------------------------
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# IDEs and Editors
+.vscode/
+!.vscode/extensions.json
+!.vscode/launch.json
+.idea/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.suo
+*.ntvs*
+*.njsproj
+*.sw?
+.history/
+
+# --------------------------------------------------------------------
+# React / Node Frontend Ignores
+# --------------------------------------------------------------------
+# Dependency directories
+app/node_modules/
+node_modules/
+
+# Build outputs
+app/dist/
+app/dist-ssr/
+dist/
+
+# Local env files
+app/.env
+app/.env.local
+app/.env.development.local
+app/.env.test.local
+app/.env.production.local
+.env
+.env.local
+
+# Vite caches
+app/.vite/
+.vite/
+
+# Logs
+app/logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# --------------------------------------------------------------------
+# .NET Core / C# Backend Ignores
+# --------------------------------------------------------------------
+# Build folders
+backend/*/bin/
+backend/*/obj/
+bin/
+obj/
+
+# Visual Studio / MSBuild cache
+.vs/
+[Dd]ebug/
+[Dd]ebugPS/
+[Rr]elease/
+[Rr]eleasePS/
+x64/
+x86/
+bld/
+[Bb]in/
+[Oo]bj/
+Generated Files/
+
+# User-specific files
+*.rsuser
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Mono auto generated files
+mono_crash.*
+
+# EF Core / SQL Server database files
+backend/BanhCanhCaLoc.Api/App_Data/
+*.mdf
+*.ldf
+*.sdf
+*.bak
+database/backups/*.bak
+
+
+# Secrets & local settings
+appsettings.local.json
+backend/*/appsettings.local.json
+secrets.json
+.microsoft.dotnet.keyvalues.json
