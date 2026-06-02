@@ -1,0 +1,58 @@
+{
+  "last_updated": "2026-04-17T04:10:00Z",
+  "entries": [
+    {
+      "id": "admin-users-i18n-fix",
+      "timestamp": "2026-04-17T04:10:00Z",
+      "summary": "Implemented i18n for Admin User Edit Modal and locale files.",
+      "files": [
+        "src/pages/admin-users-detail/components/AdminUserEditModal.vue",
+        "src/locales/en/admin-users-detail.js",
+        "src/locales/ja/admin-users-detail.js",
+        "src/locales/ms/admin-users-detail.js",
+        "src/locales/th/admin-users-detail.js"
+      ],
+      "tags": [
+        "i18n",
+        "admin-users",
+        "localization"
+      ],
+      "reuse_count": 0
+    },
+    {
+      "id": "admin-users-api-serialization",
+      "timestamp": "2026-04-17T04:46:00Z",
+      "summary": "Configured global axios paramsSerializer with qs repeat format to support roles=vet&roles=support_staff.",
+      "files": [
+        "src/services/api.js"
+      ],
+      "tags": [
+        "api",
+        "serialization",
+        "axios",
+        "query-string"
+      ],
+      "reuse_count": 0
+    },
+    {
+      "id": "vet-edit-modal-hifi",
+      "timestamp": "2026-04-17T16:45:00Z",
+      "summary": "Implemented high-fidelity Vet Edit Modal with 3-column grid, themed sections, and available time checklists.",
+      "files": [
+        "src/pages/admin-users-detail/components/AdminUserEditModal.vue",
+        "src/locales/en/admin-users-detail.js",
+        "src/locales/ja/admin-users-detail.js",
+        "src/locales/ms/admin-users-detail.js",
+        "src/locales/th/admin-users-detail.js"
+      ],
+      "tags": [
+        "ui",
+        "hifi",
+        "vet",
+        "grid",
+        "modal"
+      ],
+      "reuse_count": 0
+    }
+  ]
+}

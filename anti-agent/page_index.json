@@ -1,0 +1,615 @@
+{
+  "title": "banh-canh-ca-loc",
+  "nodes": [
+    {
+      "title": "README.md",
+      "path": "C:\\dattt\\LEARN\\banh-canh-ca-loc\\README.md",
+      "type": "file"
+    },
+    {
+      "title": "anti-agent",
+      "nodes": [
+        {
+          "title": "GEMINI.md",
+          "path": "C:\\dattt\\LEARN\\banh-canh-ca-loc\\anti-agent\\GEMINI.md",
+          "type": "file"
+        },
+        {
+          "title": "antigravity-kit",
+          "nodes": [
+            {
+              "title": "web",
+              "nodes": [
+                {
+                  "title": "pipeline-visualization.html",
+                  "path": "C:\\dattt\\LEARN\\banh-canh-ca-loc\\anti-agent\\antigravity-kit\\web\\pipeline-visualization.html",
+                  "type": "file"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "title": "docs",
+          "nodes": [
+            {
+              "title": "PLAN.md",
+              "path": "C:\\dattt\\LEARN\\banh-canh-ca-loc\\anti-agent\\docs\\PLAN.md",
+              "type": "file"
+            },
+            {
+              "title": "SECURITY_ANALYSIS_PROPOSAL.md",
+              "path": "C:\\dattt\\LEARN\\banh-canh-ca-loc\\anti-agent\\docs\\SECURITY_ANALYSIS_PROPOSAL.md",
+              "type": "file"
+            },
+            {
+              "title": "SECURITY_CODE_REVIEW_REPORT.xlsx",
+              "path": "C:\\dattt\\LEARN\\banh-canh-ca-loc\\anti-agent\\docs\\SECURITY_CODE_REVIEW_REPORT.xlsx",
+              "type": "file"
+            }
+          ]
+        },
+        {
+          "title": "scripts",
+          "nodes": [
+            {
+              "title": "cleanup.sh",
+              "path": "C:\\dattt\\LEARN\\banh-canh-ca-loc\\anti-agent\\scripts\\cleanup.sh",
+              "type": "file"
+            },
+            {
+              "title": "generate_report.py",
+              "path": "C:\\dattt\\LEARN\\banh-canh-ca-loc\\anti-agent\\scripts\\generate_report.py",
+              "type": "file"
+            },
+            {
+              "title": "init.sql",
+              "path": "C:\\dattt\\LEARN\\banh-canh-ca-loc\\anti-agent\\scripts\\init.sql",
+              "type": "file"
+            },
+            {
+              "title": "seed-data.js",
+              "path": "C:\\dattt\\LEARN\\banh-canh-ca-loc\\anti-agent\\scripts\\seed-data.js",
+              "type": "file"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "app",
+      "nodes": [
+        {
+          "title": ".env",
+          "path": "C:\\dattt\\LEARN\\banh-canh-ca-loc\\app\\.env",
+          "type": "file"
+        },
+        {
+          "title": "components.json",
+          "path": "C:\\dattt\\LEARN\\banh-canh-ca-loc\\app\\components.json",
+          "type": "file"
+        },
+        {
+          "title": "eslint.config.js",
+          "path": "C:\\dattt\\LEARN\\banh-canh-ca-loc\\app\\eslint.config.js",
+          "type": "file"
+        },
+        {
+          "title": "index.html",
+          "path": "C:\\dattt\\LEARN\\banh-canh-ca-loc\\app\\index.html",
+          "type": "file"
+        },
+        {
+          "title": "jsconfig.json",
+          "path": "C:\\dattt\\LEARN\\banh-canh-ca-loc\\app\\jsconfig.json",
+          "type": "file"
+        },
+        {
+          "title": "package-lock.json",
+          "path": "C:\\dattt\\LEARN\\banh-canh-ca-loc\\app\\package-lock.json",
+          "type": "file"
+        },
+        {
+          "title": "package.json",
+          "path": "C:\\dattt\\LEARN\\banh-canh-ca-loc\\app\\package.json",
+          "type": "file"
+        },
+        {
+          "title": "postcss.config.js",
+          "path": "C:\\dattt\\LEARN\\banh-canh-ca-loc\\app\\postcss.config.js",
+          "type": "file"
+        },
+        {
+          "title": "public",
+          "nodes": [
+            {
+              "title": "banh_canh_logo.png",
+              "path": "C:\\dattt\\LEARN\\banh-canh-ca-loc\\app\\public\\banh_canh_logo.png",
+              "type": "file"
+            }
+          ]
+        },
+        {
+          "title": "src",
+          "nodes": [
+            {
+              "title": "App.jsx",
+              "path": "C:\\dattt\\LEARN\\banh-canh-ca-loc\\app\\src\\App.jsx",
+              "type": "file"
+            },
+            {
+              "title": "api",
+              "nodes": [
+                {
+                  "title": "base44Client.js",
+                  "path": "C:\\dattt\\LEARN\\banh-canh-ca-loc\\app\\src\\api\\base44Client.js",
+                  "type": "file"
+                }
+              ]
+            },
+            {
+              "title": "components",
+              "nodes": [
+                {
+                  "title": "AuthLayout.jsx",
+                  "path": "C:\\dattt\\LEARN\\banh-canh-ca-loc\\app\\src\\components\\AuthLayout.jsx",
+                  "type": "file"
+                },
+                {
+                  "title": "GoogleIcon.jsx",
+                  "path": "C:\\dattt\\LEARN\\banh-canh-ca-loc\\app\\src\\components\\GoogleIcon.jsx",
+                  "type": "file"
+                },
+                {
+                  "title": "Layout.jsx",
+                  "path": "C:\\dattt\\LEARN\\banh-canh-ca-loc\\app\\src\\components\\Layout.jsx",
+                  "type": "file"
+                },
+                {
+                  "title": "NewOrderDialog.jsx",
+                  "path": "C:\\dattt\\LEARN\\banh-canh-ca-loc\\app\\src\\components\\NewOrderDialog.jsx",
+                  "type": "file"
+                },
+                {
+                  "title": "OrderPanel.jsx",
+                  "path": "C:\\dattt\\LEARN\\banh-canh-ca-loc\\app\\src\\components\\OrderPanel.jsx",
+                  "type": "file"
+                },
+                {
+                  "title": "PaymentDialog.jsx",
+                  "path": "C:\\dattt\\LEARN\\banh-canh-ca-loc\\app\\src\\components\\PaymentDialog.jsx",
+                  "type": "file"
+                },
+                {
+                  "title": "ProtectedRoute.jsx",
+                  "path": "C:\\dattt\\LEARN\\banh-canh-ca-loc\\app\\src\\components\\ProtectedRoute.jsx",
+                  "type": "file"
+                },
+                {
+                  "title": "RecipeEditor.jsx",
+                  "path": "C:\\dattt\\LEARN\\banh-canh-ca-loc\\app\\src\\components\\RecipeEditor.jsx",
+                  "type": "file"
+                },
+                {
+                  "title": "ScrollToTop.jsx",
+                  "path": "C:\\dattt\\LEARN\\banh-canh-ca-loc\\app\\src\\components\\ScrollToTop.jsx",
+                  "type": "file"
+                },
+                {
+                  "title": "ShiftGuard.jsx",
+                  "path": "C:\\dattt\\LEARN\\banh-canh-ca-loc\\app\\src\\components\\ShiftGuard.jsx",
+                  "type": "file"
+                },
+                {
+                  "title": "UserNotRegisteredError.jsx",
+                  "path": "C:\\dattt\\LEARN\\banh-canh-ca-loc\\app\\src\\components\\UserNotRegisteredError.jsx",
+                  "type": "file"
+                },
+                {
+                  "title": "ui",
+                  "nodes": [
+                    {
+                      "title": "accordion.jsx",
+                      "path": "C:\\dattt\\LEARN\\banh-canh-ca-loc\\app\\src\\components\\ui\\accordion.jsx",
+                      "type": "file"
+                    },
+                    {
+                      "title": "alert-dialog.jsx",
+                      "path": "C:\\dattt\\LEARN\\banh-canh-ca-loc\\app\\src\\components\\ui\\alert-dialog.jsx",
+                      "type": "file"
+                    },
+                    {
+                      "title": "alert.jsx",
+                      "path": "C:\\dattt\\LEARN\\banh-canh-ca-loc\\app\\src\\components\\ui\\alert.jsx",
+                      "type": "file"
+                    },
+                    {
+                      "title": "aspect-ratio.jsx",
+                      "path": "C:\\dattt\\LEARN\\banh-canh-ca-loc\\app\\src\\components\\ui\\aspect-ratio.jsx",
+                      "type": "file"
+                    },
+                    {
+                      "title": "avatar.jsx",
+                      "path": "C:\\dattt\\LEARN\\banh-canh-ca-loc\\app\\src\\components\\ui\\avatar.jsx",
+                      "type": "file"
+                    },
+                    {
+                      "title": "badge.jsx",
+                      "path": "C:\\dattt\\LEARN\\banh-canh-ca-loc\\app\\src\\components\\ui\\badge.jsx",
+                      "type": "file"
+                    },
+                    {
+                      "title": "breadcrumb.jsx",
+                      "path": "C:\\dattt\\LEARN\\banh-canh-ca-loc\\app\\src\\components\\ui\\breadcrumb.jsx",
+                      "type": "file"
+                    },
+                    {
+                      "title": "button.jsx",
+                      "path": "C:\\dattt\\LEARN\\banh-canh-ca-loc\\app\\src\\components\\ui\\button.jsx",
+                      "type": "file"
+                    },
+                    {
+                      "title": "calendar.jsx",
+                      "path": "C:\\dattt\\LEARN\\banh-canh-ca-loc\\app\\src\\components\\ui\\calendar.jsx",
+                      "type": "file"
+                    },
+                    {
+                      "title": "card.jsx",
+                      "path": "C:\\dattt\\LEARN\\banh-canh-ca-loc\\app\\src\\components\\ui\\card.jsx",
+                      "type": "file"
+                    },
+                    {
+                      "title": "carousel.jsx",
+                      "path": "C:\\dattt\\LEARN\\banh-canh-ca-loc\\app\\src\\components\\ui\\carousel.jsx",
+                      "type": "file"
+                    },
+                    {
+                      "title": "chart.jsx",
+                      "path": "C:\\dattt\\LEARN\\banh-canh-ca-loc\\app\\src\\components\\ui\\chart.jsx",
+                      "type": "file"
+                    },
+                    {
+                      "title": "checkbox.jsx",
+                      "path": "C:\\dattt\\LEARN\\banh-canh-ca-loc\\app\\src\\components\\ui\\checkbox.jsx",
+                      "type": "file"
+                    },
+                    {
+                      "title": "collapsible.jsx",
+                      "path": "C:\\dattt\\LEARN\\banh-canh-ca-loc\\app\\src\\components\\ui\\collapsible.jsx",
+                      "type": "file"
+                    },
+                    {
+                      "title": "command.jsx",
+                      "path": "C:\\dattt\\LEARN\\banh-canh-ca-loc\\app\\src\\components\\ui\\command.jsx",
+                      "type": "file"
+                    },
+                    {
+                      "title": "context-menu.jsx",
+                      "path": "C:\\dattt\\LEARN\\banh-canh-ca-loc\\app\\src\\components\\ui\\context-menu.jsx",
+                      "type": "file"
+                    },
+                    {
+                      "title": "dialog.jsx",
+                      "path": "C:\\dattt\\LEARN\\banh-canh-ca-loc\\app\\src\\components\\ui\\dialog.jsx",
+                      "type": "file"
+                    },
+                    {
+                      "title": "drawer.jsx",
+                      "path": "C:\\dattt\\LEARN\\banh-canh-ca-loc\\app\\src\\components\\ui\\drawer.jsx",
+                      "type": "file"
+                    },
+                    {
+                      "title": "dropdown-menu.jsx",
+                      "path": "C:\\dattt\\LEARN\\banh-canh-ca-loc\\app\\src\\components\\ui\\dropdown-menu.jsx",
+                      "type": "file"
+                    },
+                    {
+                      "title": "form.jsx",
+                      "path": "C:\\dattt\\LEARN\\banh-canh-ca-loc\\app\\src\\components\\ui\\form.jsx",
+                      "type": "file"
+                    },
+                    {
+                      "title": "hover-card.jsx",
+                      "path": "C:\\dattt\\LEARN\\banh-canh-ca-loc\\app\\src\\components\\ui\\hover-card.jsx",
+                      "type": "file"
+                    },
+                    {
+                      "title": "input-otp.jsx",
+                      "path": "C:\\dattt\\LEARN\\banh-canh-ca-loc\\app\\src\\components\\ui\\input-otp.jsx",
+                      "type": "file"
+                    },
+                    {
+                      "title": "input.jsx",
+                      "path": "C:\\dattt\\LEARN\\banh-canh-ca-loc\\app\\src\\components\\ui\\input.jsx",
+                      "type": "file"
+                    },
+                    {
+                      "title": "label.jsx",
+                      "path": "C:\\dattt\\LEARN\\banh-canh-ca-loc\\app\\src\\components\\ui\\label.jsx",
+                      "type": "file"
+                    },
+                    {
+                      "title": "menubar.jsx",
+                      "path": "C:\\dattt\\LEARN\\banh-canh-ca-loc\\app\\src\\components\\ui\\menubar.jsx",
+                      "type": "file"
+                    },
+                    {
+                      "title": "navigation-menu.jsx",
+                      "path": "C:\\dattt\\LEARN\\banh-canh-ca-loc\\app\\src\\components\\ui\\navigation-menu.jsx",
+                      "type": "file"
+                    },
+                    {
+                      "title": "pagination.jsx",
+                      "path": "C:\\dattt\\LEARN\\banh-canh-ca-loc\\app\\src\\components\\ui\\pagination.jsx",
+                      "type": "file"
+                    },
+                    {
+                      "title": "popover.jsx",
+                      "path": "C:\\dattt\\LEARN\\banh-canh-ca-loc\\app\\src\\components\\ui\\popover.jsx",
+                      "type": "file"
+                    },
+                    {
+                      "title": "progress.jsx",
+                      "path": "C:\\dattt\\LEARN\\banh-canh-ca-loc\\app\\src\\components\\ui\\progress.jsx",
+                      "type": "file"
+                    },
+                    {
+                      "title": "radio-group.jsx",
+                      "path": "C:\\dattt\\LEARN\\banh-canh-ca-loc\\app\\src\\components\\ui\\radio-group.jsx",
+                      "type": "file"
+                    },
+                    {
+                      "title": "resizable.jsx",
+                      "path": "C:\\dattt\\LEARN\\banh-canh-ca-loc\\app\\src\\components\\ui\\resizable.jsx",
+                      "type": "file"
+                    },
+                    {
+                      "title": "scroll-area.jsx",
+                      "path": "C:\\dattt\\LEARN\\banh-canh-ca-loc\\app\\src\\components\\ui\\scroll-area.jsx",
+                      "type": "file"
+                    },
+                    {
+                      "title": "select.jsx",
+                      "path": "C:\\dattt\\LEARN\\banh-canh-ca-loc\\app\\src\\components\\ui\\select.jsx",
+                      "type": "file"
+                    },
+                    {
+                      "title": "separator.jsx",
+                      "path": "C:\\dattt\\LEARN\\banh-canh-ca-loc\\app\\src\\components\\ui\\separator.jsx",
+                      "type": "file"
+                    },
+                    {
+                      "title": "sheet.jsx",
+                      "path": "C:\\dattt\\LEARN\\banh-canh-ca-loc\\app\\src\\components\\ui\\sheet.jsx",
+                      "type": "file"
+                    },
+                    {
+                      "title": "sidebar.jsx",
+                      "path": "C:\\dattt\\LEARN\\banh-canh-ca-loc\\app\\src\\components\\ui\\sidebar.jsx",
+                      "type": "file"
+                    },
+                    {
+                      "title": "skeleton.jsx",
+                      "path": "C:\\dattt\\LEARN\\banh-canh-ca-loc\\app\\src\\components\\ui\\skeleton.jsx",
+                      "type": "file"
+                    },
+                    {
+                      "title": "slider.jsx",
+                      "path": "C:\\dattt\\LEARN\\banh-canh-ca-loc\\app\\src\\components\\ui\\slider.jsx",
+                      "type": "file"
+                    },
+                    {
+                      "title": "sonner.jsx",
+                      "path": "C:\\dattt\\LEARN\\banh-canh-ca-loc\\app\\src\\components\\ui\\sonner.jsx",
+                      "type": "file"
+                    },
+                    {
+                      "title": "switch.jsx",
+                      "path": "C:\\dattt\\LEARN\\banh-canh-ca-loc\\app\\src\\components\\ui\\switch.jsx",
+                      "type": "file"
+                    },
+                    {
+                      "title": "table.jsx",
+                      "path": "C:\\dattt\\LEARN\\banh-canh-ca-loc\\app\\src\\components\\ui\\table.jsx",
+                      "type": "file"
+                    },
+                    {
+                      "title": "tabs.jsx",
+                      "path": "C:\\dattt\\LEARN\\banh-canh-ca-loc\\app\\src\\components\\ui\\tabs.jsx",
+                      "type": "file"
+                    },
+                    {
+                      "title": "textarea.jsx",
+                      "path": "C:\\dattt\\LEARN\\banh-canh-ca-loc\\app\\src\\components\\ui\\textarea.jsx",
+                      "type": "file"
+                    },
+                    {
+                      "title": "toast.jsx",
+                      "path": "C:\\dattt\\LEARN\\banh-canh-ca-loc\\app\\src\\components\\ui\\toast.jsx",
+                      "type": "file"
+                    },
+                    {
+                      "title": "toaster.jsx",
+                      "path": "C:\\dattt\\LEARN\\banh-canh-ca-loc\\app\\src\\components\\ui\\toaster.jsx",
+                      "type": "file"
+                    },
+                    {
+                      "title": "toggle-group.jsx",
+                      "path": "C:\\dattt\\LEARN\\banh-canh-ca-loc\\app\\src\\components\\ui\\toggle-group.jsx",
+                      "type": "file"
+                    },
+                    {
+                      "title": "toggle.jsx",
+                      "path": "C:\\dattt\\LEARN\\banh-canh-ca-loc\\app\\src\\components\\ui\\toggle.jsx",
+                      "type": "file"
+                    },
+                    {
+                      "title": "tooltip.jsx",
+                      "path": "C:\\dattt\\LEARN\\banh-canh-ca-loc\\app\\src\\components\\ui\\tooltip.jsx",
+                      "type": "file"
+                    },
+                    {
+                      "title": "use-toast.jsx",
+                      "path": "C:\\dattt\\LEARN\\banh-canh-ca-loc\\app\\src\\components\\ui\\use-toast.jsx",
+                      "type": "file"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "title": "hooks",
+              "nodes": [
+                {
+                  "title": "use-mobile.jsx",
+                  "path": "C:\\dattt\\LEARN\\banh-canh-ca-loc\\app\\src\\hooks\\use-mobile.jsx",
+                  "type": "file"
+                }
+              ]
+            },
+            {
+              "title": "index.css",
+              "path": "C:\\dattt\\LEARN\\banh-canh-ca-loc\\app\\src\\index.css",
+              "type": "file"
+            },
+            {
+              "title": "lib",
+              "nodes": [
+                {
+                  "title": "AuthContext.jsx",
+                  "path": "C:\\dattt\\LEARN\\banh-canh-ca-loc\\app\\src\\lib\\AuthContext.jsx",
+                  "type": "file"
+                },
+                {
+                  "title": "PageNotFound.jsx",
+                  "path": "C:\\dattt\\LEARN\\banh-canh-ca-loc\\app\\src\\lib\\PageNotFound.jsx",
+                  "type": "file"
+                },
+                {
+                  "title": "app-params.js",
+                  "path": "C:\\dattt\\LEARN\\banh-canh-ca-loc\\app\\src\\lib\\app-params.js",
+                  "type": "file"
+                },
+                {
+                  "title": "appAuth.jsx",
+                  "path": "C:\\dattt\\LEARN\\banh-canh-ca-loc\\app\\src\\lib\\appAuth.jsx",
+                  "type": "file"
+                },
+                {
+                  "title": "query-client.js",
+                  "path": "C:\\dattt\\LEARN\\banh-canh-ca-loc\\app\\src\\lib\\query-client.js",
+                  "type": "file"
+                },
+                {
+                  "title": "seedData.js",
+                  "path": "C:\\dattt\\LEARN\\banh-canh-ca-loc\\app\\src\\lib\\seedData.js",
+                  "type": "file"
+                },
+                {
+                  "title": "storage.js",
+                  "path": "C:\\dattt\\LEARN\\banh-canh-ca-loc\\app\\src\\lib\\storage.js",
+                  "type": "file"
+                },
+                {
+                  "title": "utils.js",
+                  "path": "C:\\dattt\\LEARN\\banh-canh-ca-loc\\app\\src\\lib\\utils.js",
+                  "type": "file"
+                }
+              ]
+            },
+            {
+              "title": "main.jsx",
+              "path": "C:\\dattt\\LEARN\\banh-canh-ca-loc\\app\\src\\main.jsx",
+              "type": "file"
+            },
+            {
+              "title": "pages",
+              "nodes": [
+                {
+                  "title": "Dashboard.jsx",
+                  "path": "C:\\dattt\\LEARN\\banh-canh-ca-loc\\app\\src\\pages\\Dashboard.jsx",
+                  "type": "file"
+                },
+                {
+                  "title": "ForgotPassword.jsx",
+                  "path": "C:\\dattt\\LEARN\\banh-canh-ca-loc\\app\\src\\pages\\ForgotPassword.jsx",
+                  "type": "file"
+                },
+                {
+                  "title": "Inventory.jsx",
+                  "path": "C:\\dattt\\LEARN\\banh-canh-ca-loc\\app\\src\\pages\\Inventory.jsx",
+                  "type": "file"
+                },
+                {
+                  "title": "Kitchen.jsx",
+                  "path": "C:\\dattt\\LEARN\\banh-canh-ca-loc\\app\\src\\pages\\Kitchen.jsx",
+                  "type": "file"
+                },
+                {
+                  "title": "Login.jsx",
+                  "path": "C:\\dattt\\LEARN\\banh-canh-ca-loc\\app\\src\\pages\\Login.jsx",
+                  "type": "file"
+                },
+                {
+                  "title": "Menu.jsx",
+                  "path": "C:\\dattt\\LEARN\\banh-canh-ca-loc\\app\\src\\pages\\Menu.jsx",
+                  "type": "file"
+                },
+                {
+                  "title": "Orders.jsx",
+                  "path": "C:\\dattt\\LEARN\\banh-canh-ca-loc\\app\\src\\pages\\Orders.jsx",
+                  "type": "file"
+                },
+                {
+                  "title": "Register.jsx",
+                  "path": "C:\\dattt\\LEARN\\banh-canh-ca-loc\\app\\src\\pages\\Register.jsx",
+                  "type": "file"
+                },
+                {
+                  "title": "Reports.jsx",
+                  "path": "C:\\dattt\\LEARN\\banh-canh-ca-loc\\app\\src\\pages\\Reports.jsx",
+                  "type": "file"
+                },
+                {
+                  "title": "ResetPassword.jsx",
+                  "path": "C:\\dattt\\LEARN\\banh-canh-ca-loc\\app\\src\\pages\\ResetPassword.jsx",
+                  "type": "file"
+                },
+                {
+                  "title": "Staff.jsx",
+                  "path": "C:\\dattt\\LEARN\\banh-canh-ca-loc\\app\\src\\pages\\Staff.jsx",
+                  "type": "file"
+                },
+                {
+                  "title": "Tables.jsx",
+                  "path": "C:\\dattt\\LEARN\\banh-canh-ca-loc\\app\\src\\pages\\Tables.jsx",
+                  "type": "file"
+                }
+              ]
+            },
+            {
+              "title": "utils",
+              "nodes": [
+                {
+                  "title": "index.ts",
+                  "path": "C:\\dattt\\LEARN\\banh-canh-ca-loc\\app\\src\\utils\\index.ts",
+                  "type": "file"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "title": "tailwind.config.js",
+          "path": "C:\\dattt\\LEARN\\banh-canh-ca-loc\\app\\tailwind.config.js",
+          "type": "file"
+        },
+        {
+          "title": "vite.config.js",
+          "path": "C:\\dattt\\LEARN\\banh-canh-ca-loc\\app\\vite.config.js",
+          "type": "file"
+        }
+      ]
+    }
+  ]
+}
