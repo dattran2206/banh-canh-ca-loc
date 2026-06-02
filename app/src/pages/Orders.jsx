@@ -7,24 +7,59 @@ import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import PaymentDialog from '@/components/PaymentDialog';
 import apiClient from '@/api/apiClient';
+import { useToast } from '@/components/ui/use-toast';
+import { ConfirmDialog } from '@/components/ui/confirm';
 
-const statusLabel = { pending: 'Chờ', confirmed: 'Xác nhận', preparing: 'Chế biến', ready: 'Sẵn sàng', paid: 'Đã TT' };
+const statusLabel = { pending: 'Chờ', confirmed: 'Xác nhận', preparing: 'Chế biến', ready: 'Sẵn sàng', paid: 'Đã TT', cancelled: 'Đã hủy' };
 const statusColor = {
     pending: 'bg-gray-100 text-gray-700',
     confirmed: 'bg-blue-100 text-blue-700',
     preparing: 'bg-amber-100 text-amber-700',
     ready: 'bg-green-100 text-green-700',
     paid: 'bg-gray-100 text-gray-400',
+    cancelled: 'bg-rose-105 text-rose-700 border-rose-200 text-rose-700',
 };
 
 export default function Orders() {
     const { currentUser } = useAppAuth();
-    const { orders: activeOrders } = useData();
+    const { orders: activeOrders, updateOrderStatus } = useData();
+    const { toast } = useToast();
     const [filter, setFilter] = useState('active');
     const [payingOrderId, setPayingOrderId] = useState(null);
     const [payingTable, setPayingTable] = useState(null);
     const [historyOrders, setHistoryOrders] = useState([]);
     const [loadingHistory, setLoadingHistory] = useState(false);
+    const [confirmOpen, setConfirmOpen] = useState(false);
+    const [confirmConfig, setConfirmConfig] = useState({
+        title: "",
+        description: "",
+        onConfirm: () => {}
+    });
+
+    const handleCancelOrder = (orderId, orderNumber) => {
+        setConfirmConfig({
+            title: "Xác nhận hủy đơn",
+            description: `Bạn có chắc chắn muốn hủy đơn hàng #${orderNumber}?`,
+            onConfirm: async () => {
+                try {
+                    await updateOrderStatus(orderId, 'cancelled');
+                    toast({
+                        title: "Hủy đơn hàng thành công",
+                        description: `Đơn hàng #${orderNumber} đã được hủy.`,
+                    });
+                    loadHistory(); // Reload history just in case we are in history tab
+                } catch (err) {
+                    console.error("Error cancelling order", err);
+                    toast({
+                        variant: "destructive",
+                        title: "Lỗi",
+                        description: "Không thể hủy đơn hàng.",
+                    });
+                }
+            }
+        });
+        setConfirmOpen(true);
+    };
 
     const loadHistory = () => {
         if (filter !== 'active') {
@@ -104,14 +139,24 @@ export default function Orders() {
                                             <span className="text-amber-700">{total.toLocaleString('vi-VN')}đ</span>
                                         </div>
                                     </div>
-                                    {canPay && ['confirmed', 'preparing', 'ready'].includes(order.status) && (
-                                        <div className="px-4 pb-3">
+                                    {['confirmed', 'preparing', 'ready'].includes(order.status) && (
+                                        <div className="px-4 pb-3 flex gap-2">
+                                            {canPay && (
+                                                <Button
+                                                    size="sm"
+                                                    onClick={() => { setPayingOrderId(order.id); setPayingTable(order.table); }}
+                                                    className={cn('flex-1 text-white text-xs rounded-xl', order.status === 'ready' ? 'bg-green-500 hover:bg-green-600' : 'bg-amber-500 hover:bg-amber-600')}
+                                                >
+                                                    {order.status === 'ready' ? 'Thanh toán' : 'Xuất hóa đơn'}
+                                                </Button>
+                                            )}
                                             <Button
                                                 size="sm"
-                                                onClick={() => { setPayingOrderId(order.id); setPayingTable(order.table); }}
-                                                className={cn('w-full text-white text-xs rounded-xl', order.status === 'ready' ? 'bg-green-500 hover:bg-green-600' : 'bg-amber-50 hover:bg-amber-600')}
+                                                variant="destructive"
+                                                onClick={() => handleCancelOrder(order.id, order.orderNumber)}
+                                                className="text-xs rounded-xl bg-rose-500 hover:bg-rose-600 text-white"
                                             >
-                                                {order.status === 'ready' ? 'Thanh toán' : 'Xuất hóa đơn'}
+                                                Hủy
                                             </Button>
                                         </div>
                                     )}
@@ -130,6 +175,14 @@ export default function Orders() {
                     onPaid={() => { setPayingOrderId(null); setPayingTable(null); loadHistory(); }}
                 />
             )}
+
+            <ConfirmDialog
+                open={confirmOpen}
+                onOpenChange={setConfirmOpen}
+                title={confirmConfig.title}
+                description={confirmConfig.description}
+                onConfirm={confirmConfig.onConfirm}
+            />
         </div>
     );
 }

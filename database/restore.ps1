@@ -79,11 +79,30 @@ if (-not (Get-Command "sqlcmd" -ErrorAction SilentlyContinue)) {
     exit 1
 }
 
-# Build SQL query to kick out active connections and restore database
+# Build SQL query to kick out active connections and restore database using WITH MOVE to dynamic locations
 $sqlQuery = @"
-ALTER DATABASE [$db] SET SINGLE_USER WITH ROLLBACK IMMEDIATE;
-RESTORE DATABASE [$db] FROM DISK = N'$tempFile' WITH REPLACE, RECOVERY;
-ALTER DATABASE [$db] SET MULTI_USER;
+DECLARE @DefaultDataPath NVARCHAR(512);
+SELECT @DefaultDataPath = SUBSTRING(physical_name, 1, LEN(physical_name) - CHARINDEX('\', REVERSE(physical_name)) + 1)
+FROM master.sys.master_files
+WHERE name = 'master' AND file_id = 1;
+
+DECLARE @MdfPath NVARCHAR(512) = @DefaultDataPath + '$db.mdf';
+DECLARE @LdfPath NVARCHAR(512) = @DefaultDataPath + '${db}_log.ldf';
+
+DECLARE @Sql NVARCHAR(MAX) = N'';
+
+IF EXISTS (SELECT 1 FROM sys.databases WHERE name = N'$db')
+BEGIN
+    SET @Sql = @Sql + N'ALTER DATABASE [$db] SET SINGLE_USER WITH ROLLBACK IMMEDIATE; ';
+END;
+
+SET @Sql = @Sql + N'RESTORE DATABASE [$db] FROM DISK = N''$tempFile'' WITH REPLACE, RECOVERY, ' +
+           N'MOVE N''$db'' TO N''' + @MdfPath + ''', ' +
+           N'MOVE N''${db}_log'' TO N''' + @LdfPath + '''; ';
+
+SET @Sql = @Sql + N'ALTER DATABASE [$db] SET MULTI_USER; ';
+
+EXEC sp_executesql @Sql;
 "@
 
 # Prepare arguments

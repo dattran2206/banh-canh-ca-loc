@@ -118,7 +118,7 @@ export function DataProvider({ children }) {
         connection.on('OrderUpdated', (updatedOrder) => {
             // Update order in list
             setOrders(prev => {
-                if (updatedOrder.status === 'paid') {
+                if (updatedOrder.status === 'paid' || updatedOrder.status === 'cancelled') {
                     return prev.filter(o => o.id !== updatedOrder.id);
                 }
                 const exists = prev.some(o => o.id === updatedOrder.id);
@@ -214,6 +214,13 @@ export function DataProvider({ children }) {
         return res.data;
     };
 
+    const updateOrderItems = async (orderId, items) => {
+        const res = await apiClient.put(`/orders/${orderId}/items`, items);
+        await refreshOrders();
+        await refreshIngredients();
+        return res.data;
+    };
+
     const updateOrderStatus = async (orderId, status) => {
         const res = await apiClient.put(`/orders/${orderId}/status`, { status });
         await refreshOrders();
@@ -270,7 +277,7 @@ export function DataProvider({ children }) {
             refreshAll, refreshTables, refreshOrders, refreshCategories, refreshMenuItems, refreshIngredients, refreshAreas, refreshShopInfo, refreshActivityLogs, refreshDashboardStats,
             addTable, updateTable, deleteTable, addArea, deleteArea,
             addMenuItem, updateMenuItem, deleteMenuItem, saveRecipeItem, deleteRecipeItem,
-            createOrder, appendOrderItems, updateOrderStatus, createPayment,
+            createOrder, appendOrderItems, updateOrderItems, updateOrderStatus, createPayment,
             addStockEntry, addWasteRecord, addStockTake,
             addIngredient, updateIngredient, deleteIngredient
         }}>

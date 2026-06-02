@@ -40,8 +40,8 @@ $pwd = if ($Password) { $Password } else { $parsedPassword }
 # Generate filename
 $timestamp = Get-Date -Format "yyyyMMdd_HHmmss"
 $backupDir = Join-Path $scriptRoot "backups"
-$destFile = Join-Path $backupDir "$($db)_$timestamp.bak"
-$tempFile = "C:\Users\Public\$($db)_temp_backup.bak"
+$destFile = Join-Path $backupDir "${db}_$timestamp.bak"
+$tempFile = "C:\Users\Public\${db}_temp_backup.bak"
 
 Write-Host "--- Bat dau sao luu co so du lieu $db ---" -ForegroundColor Cyan
 Write-Host "Server: $server"

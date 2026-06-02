@@ -7,11 +7,28 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Badge } from '@/components/ui/badge';
 import { Plus, Minus, ShoppingBag } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useToast } from '@/components/ui/use-toast';
 
 export default function NewOrderDialog({ table, existingOrderId = null, onClose, onCreated }) {
     const { currentUser, currentShift } = useAppAuth();
-    const { createOrder, appendOrderItems, categories: dataCategories, menuItems: dataMenuItems } = useData();
-    const [cart, setCart] = useState([]);
+    const { toast } = useToast();
+    const { createOrder, updateOrderItems, orders, categories: dataCategories, menuItems: dataMenuItems } = useData();
+    
+    const [cart, setCart] = useState(() => {
+        if (existingOrderId) {
+            const exOrder = orders.find(o => o.id === existingOrderId);
+            if (exOrder && exOrder.items) {
+                return exOrder.items.map(item => ({
+                    menuItemId: item.menuItemId,
+                    menuItem: item.menuItem,
+                    quantity: item.quantity,
+                    note: item.note || ''
+                }));
+            }
+        }
+        return [];
+    });
+
     const [activeCategory, setActiveCategory] = useState('all');
     const [activeTab, setActiveTab] = useState('menu'); // 'menu' | 'cart'
 
@@ -63,10 +80,17 @@ export default function NewOrderDialog({ table, existingOrderId = null, onClose,
                 console.error("Error creating order", err);
             });
         } else {
-            appendOrderItems(existingOrderId, orderItemsDto).then(() => {
+            updateOrderItems(existingOrderId, orderItemsDto).then((data) => {
+                if (data.warnings && data.warnings.length > 0) {
+                    toast({
+                        variant: "destructive",
+                        title: "Cảnh báo tồn kho thấp",
+                        description: "Các nguyên liệu sắp hết: " + data.warnings.join(', '),
+                    });
+                }
                 onCreated();
             }).catch(err => {
-                console.error("Error adding items to order", err);
+                console.error("Error updating order items", err);
             });
         }
     };
@@ -78,7 +102,7 @@ export default function NewOrderDialog({ table, existingOrderId = null, onClose,
             <DialogContent className="w-[95%] sm:max-w-2xl max-h-[90vh] flex flex-col">
                 <DialogHeader>
                     <DialogTitle className="text-amber-900">
-                        {existingOrderId ? `Thêm món — Bàn ${table.number}` : `Order mới — Bàn ${table.number}`}
+                        {existingOrderId ? `Đổi / Sửa món — Bàn ${table.number}` : `Order mới — Bàn ${table.number}`}
                     </DialogTitle>
                 </DialogHeader>
 

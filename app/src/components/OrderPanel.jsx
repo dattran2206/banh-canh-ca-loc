@@ -9,23 +9,31 @@ import { cn } from '@/lib/utils';
 import NewOrderDialog from './NewOrderDialog';
 import PaymentDialog from './PaymentDialog';
 import { useToast } from '@/components/ui/use-toast';
+import { ConfirmDialog } from '@/components/ui/confirm';
 
-const statusLabel = { pending: 'Chờ', confirmed: 'Xác nhận', preparing: 'Chế biến', ready: 'Sẵn sàng', paid: 'Đã TT' };
+const statusLabel = { pending: 'Chờ', confirmed: 'Xác nhận', preparing: 'Chế biến', ready: 'Sẵn sàng', paid: 'Đã TT', cancelled: 'Đã hủy' };
 const statusColor = {
     pending: 'bg-gray-100 text-gray-700',
     confirmed: 'bg-blue-100 text-blue-700',
     preparing: 'bg-amber-100 text-amber-700',
     ready: 'bg-green-100 text-green-700',
     paid: 'bg-gray-100 text-gray-500',
+    cancelled: 'bg-rose-100 text-rose-700',
 };
 
 export default function OrderPanel({ table, onClose }) {
     const { currentUser, currentShift } = useAppAuth();
-    const { orders: allActiveOrders } = useData();
+    const { orders: allActiveOrders, updateOrderStatus } = useData();
     const { toast } = useToast();
     const [showNewOrder, setShowNewOrder] = useState(false);
     const [selectedOrderId, setSelectedOrderId] = useState(null);
     const [payingOrderId, setPayingOrderId] = useState(null);
+    const [confirmOpen, setConfirmOpen] = useState(false);
+    const [confirmConfig, setConfirmConfig] = useState({
+        title: "",
+        description: "",
+        onConfirm: () => {}
+    });
 
     const activeOrders = useMemo(() => {
         return allActiveOrders.filter(o => o.tableId === table.id && ['pending', 'confirmed', 'preparing', 'ready'].includes(o.status));
@@ -51,6 +59,45 @@ export default function OrderPanel({ table, onClose }) {
         setPayingOrderId(null);
         const stillActive = allActiveOrders.filter(o => o.tableId === table.id && ['pending', 'confirmed', 'preparing', 'ready'].includes(o.status) && o.id !== payingOrderId);
         if (stillActive.length === 0) onClose();
+    };
+
+    const handleCancelOrder = (orderId, orderNumber) => {
+        setConfirmConfig({
+            title: "Xác nhận hủy đơn",
+            description: `Bạn có chắc chắn muốn hủy đơn hàng #${orderNumber}?`,
+            onConfirm: async () => {
+                try {
+                    await updateOrderStatus(orderId, 'cancelled');
+                    toast({
+                        title: "Hủy đơn hàng thành công",
+                        description: `Đơn hàng #${orderNumber} đã được hủy.`,
+                    });
+                } catch (err) {
+                    console.error("Error cancelling order", err);
+                    toast({
+                        variant: "destructive",
+                        title: "Lỗi",
+                        description: "Không thể hủy đơn hàng.",
+                    });
+                }
+            }
+        });
+        setConfirmOpen(true);
+    };
+
+    const handleEditOrderClick = (order) => {
+        if (order.status === 'ready') {
+            setConfirmConfig({
+                title: "Đổi món đã chế biến",
+                description: "Món ăn đã chế biến xong. Bạn vẫn muốn đổi món chứ? (Món cũ sẽ tính vào hao hụt).",
+                onConfirm: () => {
+                    setSelectedOrderId(order.id);
+                }
+            });
+            setConfirmOpen(true);
+        } else {
+            setSelectedOrderId(order.id);
+        }
     };
 
     const canPay = currentUser?.role === 'cashier' || currentUser?.role === 'admin';
@@ -109,10 +156,10 @@ export default function OrderPanel({ table, onClose }) {
                                             <Button
                                                 size="sm"
                                                 variant="outline"
-                                                onClick={() => setSelectedOrderId(order.id)}
+                                                onClick={() => handleEditOrderClick(order)}
                                                 className="flex-1 border-amber-300 text-amber-700 text-xs"
                                             >
-                                                <Plus className="w-3 h-3 mr-1" /> Thêm món
+                                                Đổi / Sửa món
                                             </Button>
                                         )}
                                         {canPay && order.status === 'ready' && (
@@ -133,6 +180,14 @@ export default function OrderPanel({ table, onClose }) {
                                                 Xuất hóa đơn
                                             </Button>
                                         )}
+                                        <Button
+                                            size="sm"
+                                            variant="destructive"
+                                            onClick={() => handleCancelOrder(order.id, order.orderNumber)}
+                                            className="bg-rose-500 hover:bg-rose-600 text-white text-xs"
+                                        >
+                                            Hủy
+                                        </Button>
                                     </div>
                                 </div>
                             ))
@@ -175,6 +230,14 @@ export default function OrderPanel({ table, onClose }) {
                     onPaid={handlePaymentDone}
                 />
             )}
+
+            <ConfirmDialog
+                open={confirmOpen}
+                onOpenChange={setConfirmOpen}
+                title={confirmConfig.title}
+                description={confirmConfig.description}
+                onConfirm={confirmConfig.onConfirm}
+            />
         </>
     );
 }
